@@ -11,32 +11,61 @@ author:              Nikolay Amiantov
 maintainer:          nikoamia@gmail.com
 -- copyright:           
 category:            Graphics
-build-type:          Simple
+build-type:          Custom
 -- extra-source-files:  
 cabal-version:       >=1.10
 
 library
   exposed-modules:     Graphics.UI.SDL
+                       Graphics.UI.SDL.Class
+                       Graphics.UI.SDL.Monad
                        Graphics.UI.SDL.Video
+                       Graphics.UI.SDL.Video.Monad
                        Graphics.UI.SDL.Video.Window
                        Graphics.UI.SDL.Video.OpenGL
                        Graphics.UI.SDL.Video.ScreenSaver
                        Graphics.UI.SDL.Video.Keyboard
-                       Graphics.UI.SDL.Video.Events
+                       Graphics.UI.SDL.Video.Mouse
+                       Graphics.UI.SDL.Video.WMInfo
+                       Graphics.UI.SDL.Video.Surface
                        Graphics.UI.SDL.Audio
+                       Graphics.UI.SDL.Audio.Monad
                        Graphics.UI.SDL.Events
+                       Graphics.UI.SDL.Events.Monad
                        Graphics.UI.SDL.Events.Types
+                       Graphics.UI.SDL.Timer
+                       Graphics.UI.SDL.Timer.Monad
+                       Graphics.UI.SDL.Timer.Types
+                       Graphics.UI.SDL.Version
+                       Graphics.UI.SDL.Utils.Framerate
+                       
+                       Graphics.Rendering.OpenGL.Safe
+                       Graphics.Rendering.OpenGL.Safe.Shaders
+                       
+                       FRP.Netwire.SDL
+
   other-modules:       Data.Enum.Num
+                       Control.Monad.Maybe
+                       Data.Text.Foreign.Extra
+
                        Graphics.UI.SDL.Internal.Prim
-                       Graphics.UI.SDL.Internal.Class
+                       Graphics.UI.SDL.Video.Internal.Window
+                       Graphics.UI.SDL.Video.Internal.Keyboard
+                       Graphics.UI.SDL.Video.Internal.SysWM
+                       Graphics.UI.SDL.Video.Internal.Surface
                        Graphics.UI.SDL.Events.Internal.Types
+                       Graphics.UI.SDL.Timer.Internal
   -- other-extensions:    
   build-tools:         c2hs
   build-depends:       base >=4.7,
+                       -- Containers
                        containers,
-                       -- For logging
+                       bitset,
                        text,
                        bytestring,
+                       -- Monads
+                       monad-loops,
+                       -- For logging
                        monad-logger,
                        fast-logger,
                        file-location,
@@ -44,7 +73,11 @@ library
                        transformers,
                        transformers-base,
                        monad-control,
-                       lifted-base
+                       lifted-base,
+                       -- OpenGL helpers
+                       OpenGL,
+                       -- Netwire
+                       netwire
   pkgconfig-depends:   sdl2
-  -- hs-source-dirs:      
+  hs-source-dirs:      src
   default-language:    Haskell2010
