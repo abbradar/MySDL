@@ -8,7 +8,6 @@ module FRP.Netwire.SDL.Wires where
 import Prelude hiding ((.))
 import Control.Wire hiding (First, at)
 import Control.Wire.Unsafe.Event (Event(..))
-import Data.Maybe (maybe)
 import Control.Lens
 import Data.Monoid (First)
 

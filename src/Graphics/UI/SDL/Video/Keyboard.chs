@@ -17,11 +17,8 @@ import Control.Applicative ((<$>))
 import Control.Monad (liftM)
 import Control.Concurrent.MVar.Lifted ( MVar
                                       , newMVar
-                                      , takeMVar
-                                      , putMVar
                                       , withMVar
                                       )
-import Control.Exception (bracket_)
 import Control.Monad.Base (liftBase)
 import Data.ByteString (ByteString, packCString, useAsCString)
 import qualified Data.ByteString as B
@@ -29,7 +26,6 @@ import Data.ByteString.Unsafe (unsafePackCString)
 import System.IO.Unsafe (unsafePerformIO, unsafeDupablePerformIO)
 import Foreign.C.Types (CInt(..), CChar(..))
 import Foreign.Ptr (Ptr)
-import Control.Lens.TH (makeLenses)
 
 import Graphics.UI.SDL.Internal.Prim
 import Graphics.UI.SDL.Video.Internal.Surface

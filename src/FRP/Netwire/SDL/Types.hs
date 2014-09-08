@@ -5,7 +5,6 @@ module FRP.Netwire.SDL.Types where
 import qualified Data.BitSet.Word as BW
 import Data.Map.Strict (Map)
 import Data.Set (Set)
-import qualified Data.Set as S
 import Control.Lens
 
 import Graphics.UI.SDL.Events.Types

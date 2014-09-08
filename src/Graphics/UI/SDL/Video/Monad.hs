@@ -11,7 +11,6 @@ module Graphics.UI.SDL.Video.Monad
        , withSDLVideo
        ) where
 
-import Control.Monad
 import Control.Applicative (Applicative)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.Base (MonadBase(..))

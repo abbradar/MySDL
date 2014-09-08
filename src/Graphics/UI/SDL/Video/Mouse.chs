@@ -1,5 +1,5 @@
 module Graphics.UI.SDL.Video.Mouse
-       ( MouseButton(..)
+       ( MouseButton
        , MouseButtonState
        , MousePosition
        , getMouseState

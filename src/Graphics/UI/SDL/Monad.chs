@@ -12,7 +12,6 @@ module Graphics.UI.SDL.Monad
        , withSDL
        ) where
 
-import Control.Monad
 import Data.Monoid
 import qualified Data.ByteString.Char8 as S8
 import Data.ByteString.Unsafe (unsafeUseAsCString)

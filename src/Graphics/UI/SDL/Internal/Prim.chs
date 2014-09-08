@@ -14,7 +14,6 @@ module Graphics.UI.SDL.Internal.Prim
        , liftBaseThreaded
        ) where
 
-import Control.Applicative ((<$>))
 import Control.Monad
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -110,13 +109,13 @@ withSubSystem sys = unsafeWithSubSystem
         {#fun unsafe SDL_QuitSubSystem as ^ { `SDLSubSystem' } -> `()' #}
 
 liftBaseThreaded :: (MonadBase IO m, MonadBaseControl IO m) =>
-                    (forall a. m a -> t m a) -> (forall a. t m a -> m a) -> (forall a. t m a -> m a) -> (forall a. StM m a -> StM (t m) a) ->
+                    (forall a1. m a1 -> t m a1) -> (forall a2. t m a2 -> m a2) -> (forall a3. t m a3 -> m a3) -> (forall a4. StM m a4 -> StM (t m) a4) ->
                     (RunInBase (t m) IO -> IO a) -> t m a
 liftBaseThreaded wrap unwrap with st f = wrap $ do
-  id <- liftBase myThreadId
+  tid <- liftBase myThreadId
   liftBaseWith $ \x -> f $ \b -> do
     nid <- liftBase myThreadId
-    liftM st $ x $ (if id /= nid then with else unwrap) b
+    liftM st $ x $ (if tid /= nid then with else unwrap) b
 
 freeSDL :: Ptr a -> IO ()
 freeSDL = {#call SDL_free as ^ #} . castPtr

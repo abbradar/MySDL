@@ -11,7 +11,6 @@ module Graphics.UI.SDL.Timer.Monad
        , withSDLTimer
        ) where
 
-import Control.Monad
 import Control.Applicative (Applicative)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.Base (MonadBase(..))

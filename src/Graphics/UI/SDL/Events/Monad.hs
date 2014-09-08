@@ -12,7 +12,6 @@ module Graphics.UI.SDL.Events.Monad
        , withSDLEvents
        ) where
 
-import Control.Monad
 import Control.Applicative (Applicative)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.Base (MonadBase(..))

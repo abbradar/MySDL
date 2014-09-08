@@ -11,7 +11,6 @@ module Graphics.UI.SDL.Audio.Monad
        , withSDLAudio
        ) where
 
-import Control.Monad
 import Control.Applicative (Applicative)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.Base (MonadBase(..))

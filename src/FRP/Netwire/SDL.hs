@@ -62,7 +62,7 @@ sdlStep (InternalState is') s w i = do
 
   let getEv = pollEvent >>= \case
         Nothing -> return ([], [])
-        a@(Just (Event t d))
+        Just (Event t d)
           | t > tf -> return ([], [d])
           | otherwise -> first (d :) <$> getEv
     
