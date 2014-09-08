@@ -1,8 +1,9 @@
-1. Move to MonadIO from MonadBase.
-2. Implement netwire backend.
-3. Re-do module exportation so that parent modules will include all
+1. Re-do module exportation so that parent modules will include all
    necessary things from children modules.
-4. Maybe move back from having absolute Integer time.
-5. Fix MonadBaseControl and MonadTransControl instances -- they should
-   increase and decrease refcount as needed.
-6. Rewrite comments to use Haddock format.
+2. Rewrite comments to use Haddock format.
+3. Move Logger to separate monad.
+4. .x-format parser.
+5. BufferObjects wrappers (with explicit types, assigned Vectors for arrays etc).
+6. Bindings to SDL_* libraries.
+7. Storable-point, triangle, line and such.
+8. Overhaul Joystick and Controller API (don't really get it now, should try to actually use it).

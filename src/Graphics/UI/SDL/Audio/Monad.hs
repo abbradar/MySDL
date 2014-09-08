@@ -17,11 +17,7 @@ import Control.Monad.Fix (MonadFix)
 import Control.Monad.Base (MonadBase(..))
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Logger (MonadLogger)
-import Control.Monad.Trans.Control (MonadTransControl(..),
-                                    MonadBaseControl(..),
-                                    ComposeSt,
-                                    defaultLiftBaseWith,
-                                    defaultRestoreM)
+import Control.Monad.Trans.Control (MonadBaseControl(..))
 
 import Graphics.UI.SDL.Internal.Prim
 import Graphics.UI.SDL.Class
@@ -42,15 +38,10 @@ deriving instance MonadSDLVideo m => MonadSDLVideo (SDLAudioT m)
 deriving instance MonadSDLEvents m => MonadSDLEvents (SDLAudioT m)
 deriving instance MonadSDLTimer m => MonadSDLTimer (SDLAudioT m)
 
-instance MonadTransControl SDLAudioT where
-     newtype StT SDLAudioT a = StT {unStT :: a}
-     liftWith f = SDLAudioT $ f $ runSDLAudioT . liftM StT
-     restoreT = SDLAudioT . liftM unStT
-
-instance MonadBaseControl IO m => MonadBaseControl IO (SDLAudioT m) where
-  newtype StM (SDLAudioT m) a = StM {unStM :: ComposeSt SDLAudioT m a}
-  liftBaseWith = defaultLiftBaseWith StM
-  restoreM = defaultRestoreM unStM
+instance (MonadBaseControl IO m, MonadSDL m) => MonadBaseControl IO (SDLAudioT m) where
+  newtype StM (SDLAudioT m) a = StM {unStM :: StM m a}
+  liftBaseWith = liftBaseThreaded SDLAudioT runSDLAudioT withSDLAudio StM
+  restoreM = SDLAudioT . restoreM . unStM
 
 withSDLAudio :: (MonadBaseControl IO m, MonadSDL m) => SDLAudioT m a -> m a
 withSDLAudio = withSubSystem Audio . runSDLAudioT

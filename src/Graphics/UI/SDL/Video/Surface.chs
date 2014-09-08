@@ -25,13 +25,13 @@ import Graphics.UI.SDL.Video.Window
 #include <SDL2/SDL_video.h>
 
 updateWindowSurface :: MonadSDLVideo m => Window -> m ()
-updateWindowSurface = liftBase . sdlCode "SDL_UpdateWindowSurface" . sDLUpdateWindowSurface
+updateWindowSurface (Window w) = liftBase $ sdlCode "SDL_UpdateWindowSurface" $ sDLUpdateWindowSurface w
   where {#fun unsafe SDL_UpdateWindowSurface as ^
          { `CWindow' } -> `Int' #}
 
 type Surface = CSurface
 
 getWindowSurface :: MonadSDLVideo m => Window -> m Surface
-getWindowSurface = liftBase . sdlObject "SDL_GetWindowSurface" (\case CSurface a -> a) . sDLGetWindowSurface
+getWindowSurface (Window w) = liftBase $ sdlObject "SDL_GetWindowSurface" (\case CSurface a -> a) $ sDLGetWindowSurface w
   where {#fun unsafe SDL_GetWindowSurface as ^
          { `CWindow' } -> `CSurface' #}

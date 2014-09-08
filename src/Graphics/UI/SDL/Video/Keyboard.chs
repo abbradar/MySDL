@@ -1,59 +1,41 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Graphics.UI.SDL.Video.Keyboard
-         ( KeyCode(..)
-         , ScanCode(..)
-         , KeyMod(..)
-         , KeySym(..)
-         , keyName
+         ( keyName
          , keyFromName
          , scancodeName
          , scancodeFromName
          , scancodeFromKey
          , keyFromScancode
+
+         , startTextInput
+         , stopTextInput
+         , setTextInputRect
          ) where
 
+import Control.Applicative ((<$>))
+import Control.Monad (liftM)
 import Control.Concurrent.MVar (MVar,
                                 newMVar,
                                 takeMVar,
                                 putMVar)
 import Control.Exception (bracket_)
 import Control.Monad.Base (liftBase)
-import Data.ByteString (ByteString, packCString)
+import Data.ByteString (ByteString, packCString, useAsCString)
 import qualified Data.ByteString as B
 import Data.ByteString.Unsafe (unsafePackCString)
 import System.IO.Unsafe (unsafePerformIO, unsafeDupablePerformIO)
 import Foreign.C.Types (CInt(..), CChar(..))
-import Foreign.C.String (CString)
 import Foreign.Ptr (Ptr)
-import Data.BitSet.Word (BitSet)
+import Control.Lens.TH (makeLenses)
 
 import Graphics.UI.SDL.Internal.Prim
+import Graphics.UI.SDL.Video.Internal.Surface
 import Graphics.UI.SDL.Class
 
+{#import Graphics.UI.SDL.Video.Keyboard.Types #}
+
 #include <SDL2/SDL_keyboard.h>
-#include <SDL2/SDL_keycode.h>
-
-{#enum SDLK_UNKNOWN as KeyCode {underscoreToCase} deriving (Eq, Show) #}
-
-{#enum SDL_Scancode as ScanCode {underscoreToCase} deriving (Eq, Show) #}
-
-data KeyMod = ModLShift
-            | ModRShift
-            | ModLCtrl
-            | ModRCtrl
-            | ModLAlt
-            | ModRAlt
-            | ModLGUI
-            | ModRGUI
-            | ModNum
-            | ModCaps
-            | ModMode
-            deriving (Eq, Show, Enum)
-
-data KeySym = KeySym { scanCode :: !ScanCode
-                     , keyCode :: !KeyCode
-                     , keyMod :: !(BitSet KeyMod)
-                     }
-            deriving (Eq, Show)
 
 -- This function needs to be guarded to be thread-safe. Global variables!
 keyNameGuard :: MVar ()
@@ -64,37 +46,44 @@ keyName :: KeyCode -> ByteString
 keyName c = unsafeDupablePerformIO $ bracket_
             (takeMVar keyNameGuard)
             (putMVar keyNameGuard ())
-            $ sdlCall "SDL_GetKeyName" (sDLGetKeyName c) (not . B.null)
+            $ sdlCall "SDL_GetKeyName" (sDLGetKeyName $ fromEnum c) (not . B.null)
   where {#fun unsafe SDL_GetKeyName as ^
-         {`KeyCode'} -> `ByteString' packCString* #}
+         {`Int'} -> `ByteString' packCString* #}
 
 keyFromName :: ByteString -> KeyCode
-keyFromName c = unsafeDupablePerformIO $ B.useAsCString c $
-                \s -> sdlCall "SDL_GetKeyFromName" (sDLGetKeyFromName s)
-                      (/= SdlkUnknown)
+keyFromName c = unsafeDupablePerformIO $ sdlCall "SDL_GetKeyFromName"
+                (toEnum <$> sDLGetKeyFromName c) (/= SdlkUnknown)
   where {#fun unsafe SDL_GetKeyFromName as ^
-         {id `CString'} -> `KeyCode' #}
+         {useAsCString* `ByteString'} -> `Int' #}
 
 -- Unlike 'keyName', this is thread-safe
 scancodeName :: ScanCode -> ByteString
 scancodeName c = unsafeDupablePerformIO $
-                 sdlCall "SDL_GetScancodeName" (sDLGetScancodeName c) (not . B.null)
+                 sdlCall "SDL_GetScancodeName" (sDLGetScancodeName $ fromEnum c) (not . B.null)
   where {#fun unsafe SDL_GetScancodeName as ^
-         {`ScanCode'} -> `ByteString' unsafePackCString* #}
+         {`Int'} -> `ByteString' unsafePackCString* #}
 
 scancodeFromName :: ByteString -> ScanCode
-scancodeFromName c = unsafeDupablePerformIO $ B.useAsCString c $
-                     \s -> sdlCall "SDL_GetScancodeFromName" (sDLGetScancodeFromName s)
-                           (/= SdlScancodeUnknown)
+scancodeFromName c = unsafeDupablePerformIO $ sdlCall "SDL_GetScancodeFromName"
+                     (toEnum <$> sDLGetScancodeFromName c) (/= SdlScancodeUnknown)
   where {#fun unsafe SDL_GetScancodeFromName as ^
-         {id `CString'} -> `ScanCode' #}
+         {useAsCString* `ByteString'} -> `Int' #}
 
 scancodeFromKey :: MonadSDLVideo m => KeyCode -> m ScanCode
-scancodeFromKey = liftBase . sDLGetScancodeFromKey
+scancodeFromKey = liftBase . liftM toEnum . sDLGetScancodeFromKey . fromEnum
   where {#fun unsafe SDL_GetScancodeFromKey as ^
-         {`KeyCode'} -> `ScanCode' #}
+         {`Int'} -> `Int' #}
 
 keyFromScancode :: MonadSDLVideo m => ScanCode -> m KeyCode
-keyFromScancode = liftBase . sDLGetKeyFromScancode
+keyFromScancode = liftBase . liftM toEnum . sDLGetKeyFromScancode . fromEnum
   where {#fun unsafe SDL_GetKeyFromScancode as ^
-         {`ScanCode'} -> `KeyCode' #}
+         {`Int'} -> `Int' #}
+
+startTextInput :: MonadSDLVideo m => m ()
+startTextInput = liftBase {#call unsafe SDL_StartTextInput as ^ #}
+
+stopTextInput :: MonadSDLVideo m => m ()
+stopTextInput = liftBase {#call unsafe SDL_StopTextInput as ^ #}
+
+setTextInputRect :: MonadSDLVideo m => Rect -> m ()
+setTextInputRect r = liftBase $ withCRect r {#call unsafe SDL_SetTextInputRect as ^ #}

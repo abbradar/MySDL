@@ -1,4 +1,6 @@
+{-# OPTIONS_GHC -fno-warn-overlapping-patterns #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Graphics.UI.SDL.Video.WMInfo
        ( WMInfo
@@ -11,6 +13,7 @@ import Foreign.Ptr (Ptr, plusPtr)
 import Foreign.ForeignPtr.Safe (withForeignPtr)
 import Foreign.Storable (peekByteOff)
 import Foreign.C.Types (CInt(..))
+import Text.Printf (printf)
 
 import Data.Enum.Num
 import Graphics.UI.SDL.Internal.Prim
@@ -30,18 +33,20 @@ typedef struct SDL_SysWMinfo SDL_SysWMinfo_t;
 
 -- TODO: Get more info
 data WMInfo = Windows
-            | WinRT
             | X11
             | DirectFB
             | Cocoa
             | UIKit
             | Wayland
             | Mir
+            | WinRT
+            | Android
+            deriving (Show, Eq)
               
 --{#pointer *SDL_SysWMinfo_t as CWMInfo #}
 
-windowWMInfo :: Window -> IO (Maybe WMInfo)
-windowWMInfo (CWindow wp) =
+windowWMInfo :: SDLWindow a => a -> IO (Maybe WMInfo)
+windowWMInfo (toCWindow -> CWindow wp) =
   allocaBytesAligned {#sizeof SDL_SysWMinfo_t #} {#alignof SDL_SysWMinfo_t #} $
   \p -> withForeignPtr wp $ \w -> do
     let v = p `plusPtr` {#offsetof SDL_SysWMinfo->version #}
@@ -50,11 +55,18 @@ windowWMInfo (CWindow wp) =
     toEnum' <$> {#get SDL_SysWMinfo->subsystem #} p >>= \case
       SdlSyswmUnknown -> return Nothing
       SdlSyswmWindows -> return $ Just Windows
-      SdlSyswmWinrt -> return $ Just WinRT
       SdlSyswmX11 -> return $ Just X11
       SdlSyswmDirectfb -> return $ Just DirectFB
       SdlSyswmCocoa -> return $ Just Cocoa
       SdlSyswmUikit -> return $ Just UIKit
+#if SDL_COMPILEDVERSION >= 2002
       SdlSyswmWayland -> return $ Just Wayland
       SdlSyswmMir -> return $ Just Mir
-      e -> fail $ "Unknown platform type: " ++ show e
+#endif
+#if SDL_COMPILEDVERSION >= 2003
+      SdlSyswmWinrt -> return $ Just WinRT
+#endif
+#if SDL_COMPILEDVERSION >= 2004
+      SdlSyswmAndroid -> return $ Just Android
+#endif
+      e -> fail $ printf "Unknown platform type: %s" $ show e

@@ -23,18 +23,13 @@ import Control.Applicative (Applicative)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.Base (MonadBase(..))
 import Control.Monad.Trans.Class (MonadTrans(..))
-import Control.Monad.Trans.Control (MonadTransControl(..),
-                                    MonadBaseControl(..),
-                                    ComposeSt,
-                                    defaultLiftBaseWith,
-                                    defaultRestoreM)
+import Control.Monad.Trans.Control (MonadBaseControl(..))
 import Control.Monad.Logger (MonadLogger(..),
                              LogLevel(..))
 import System.Log.FastLogger (toLogStr, fromLogStr)
 import FileLocation.LocationString (locationToString)
 
 import Graphics.UI.SDL.Class
-import Graphics.UI.SDL.Timer.Internal
 
 {#import Graphics.UI.SDL.Internal.Prim #}
 
@@ -42,23 +37,18 @@ import Graphics.UI.SDL.Timer.Internal
 
 -- Main SDL monad transformer.
 newtype SDLT m a = SDLT { runSDLT :: m a }
-              deriving (Functor, Applicative, Monad,
-                        MonadFix)
+                 deriving (Functor, Applicative, Monad,
+                           MonadFix)
 
 instance MonadTrans SDLT where
   lift = SDLT
 
 deriving instance MonadBase IO m => MonadBase IO (SDLT m)
 
-instance MonadTransControl SDLT where
-     newtype StT SDLT a = StT {unStT :: a}
-     liftWith f = SDLT $ f $ runSDLT . liftM StT
-     restoreT = SDLT . liftM unStT
-
 instance MonadBaseControl IO m => MonadBaseControl IO (SDLT m) where
-  newtype StM (SDLT m) a = StM {unStM :: ComposeSt SDLT m a}
-  liftBaseWith = defaultLiftBaseWith StM
-  restoreM = defaultRestoreM unStM
+  newtype StM (SDLT m) a = StM {unStM :: StM m a}
+  liftBaseWith = liftBaseThreaded SDLT runSDLT withSDL StM
+  restoreM = SDLT . restoreM . unStM
 
 instance MonadBase IO m => MonadSDL (SDLT m) where
 
@@ -99,7 +89,6 @@ withSDL = unsafeWithSubSystem
           (liftBase $ do
               sdlCode "SDL_Init" $ sDLInit $ fromEnum mainSystem
               sDLLogSetPriority SdlLogCategoryApplication SdlLogPriorityVerbose
-              unsafeSetLastTicks 0
           )
           (liftBase {#call unsafe SDL_Quit as ^ #})
           mainSystem . runSDLT

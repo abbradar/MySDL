@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Graphics.UI.SDL.Internal.Prim
        ( SDLBool(..)
@@ -10,24 +11,30 @@ module Graphics.UI.SDL.Internal.Prim
        , unsafeWithSubSystem
        , withSubSystem
        , freeSDL
+       , liftBaseThreaded
        ) where
 
+import Control.Applicative ((<$>))
 import Control.Monad
-import Data.Map (Map)
-import qualified Data.Map as Map
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
 import Control.Exception.Lifted
 import System.IO.Unsafe (unsafePerformIO)
-import Control.Concurrent.MVar (MVar, newMVar, takeMVar, putMVar)
+import Control.Concurrent (myThreadId)
+import Control.Concurrent.MVar.Lifted (MVar, newMVar, modifyMVar_)
 import Foreign.ForeignPtr.Safe (ForeignPtr, touchForeignPtr)
 import Foreign.ForeignPtr.Unsafe (unsafeForeignPtrToPtr)
 import Foreign.Ptr (Ptr, nullPtr, castPtr)
 import Foreign.C.Types (CChar, CInt(..), CUInt(..))
 import Foreign.C.String (peekCString)
 import Control.Monad.Base (MonadBase(..))
-import Control.Monad.Trans.Control (MonadBaseControl(..))
+import Control.Monad.Trans.Control (MonadBaseControl(..),
+                                    RunInBase)
+import Text.Printf (printf)
 
 import Graphics.UI.SDL.Class
 
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
 {#enum SDL_bool as SDLBool {underscoreToCase} deriving (Eq, Show) #}
@@ -68,45 +75,48 @@ sdlObject str f call = do
 -- Also, SDL's init routines are not thread-safe (and should not be, of course), so we should guard it against concurrent use.
 sdlState :: MVar (Map SDLSubSystem Int)
 {-# NOINLINE sdlState #-}
-sdlState = unsafePerformIO $ newMVar Map.empty
+sdlState = unsafePerformIO $ do
+  {#call unsafe SDL_SetMainReady as ^ #}
+  newMVar Map.empty
 
 -- This scary thing implements SDL subsystems refcounting, for both main SDL and subsystems.
 unsafeWithSubSystem :: (MonadBaseControl IO m, MonadBase IO m) => m () -> m () -> SDLSubSystem -> m a -> m a
 unsafeWithSubSystem begin end sys =
   bracket_
-    (bracketOnError
-     (liftBase $ takeMVar sdlState)
-     (liftBase . putMVar sdlState)
-     (\s -> if not $ sys `Map.member` s
-            then do
-              begin
-              liftBase $ putMVar sdlState $ Map.insert sys 1 s
-            else liftBase $ putMVar sdlState $ Map.adjust succ sys s)
+    (modifyMVar_ sdlState $ \s ->
+        if not $ sys `Map.member` s
+        then do
+          begin
+          return $ Map.insert sys 1 s
+        else return $ Map.adjust succ sys s
     )
-    (bracketOnError
-        (liftBase $ takeMVar sdlState)
-        (liftBase . putMVar sdlState)
-        (\s -> do
-            -- Error "should" be impossible if nothing else except withSubSystem tampers
-            -- with sdlState.
-            let n = s Map.! sys
-            if n == 1
-              then
-              do
-                end
-                liftBase $ putMVar sdlState $ Map.delete sys s
-              else liftBase $ putMVar sdlState $ Map.adjust pred sys s
-        )
+    (modifyMVar_ sdlState $ \s -> do
+        -- Error "should" be impossible if nothing else except withSubSystem tampers
+        -- with sdlState.
+        if (s Map.! sys) == 1
+        then do
+          end
+          return $ Map.delete sys s
+        else return $ Map.adjust pred sys s
     )
 
 withSubSystem :: (MonadBaseControl IO m, MonadBase IO m, MonadSDL m) => SDLSubSystem -> m a -> m a
 withSubSystem sys = unsafeWithSubSystem
-                    (liftBase $ sdlCode ("SDL_InitSubsystem(" ++ show sys ++ ")") $
+                    (liftBase $ sdlCode (printf "SDL_InitSubsystem(%s)" $ show sys) $
                      sDLInitSubSystem sys)
                     (liftBase $ sDLQuitSubSystem sys)
                     sys
   where {#fun unsafe SDL_InitSubSystem as ^ { `SDLSubSystem' } -> `Int' #}
         {#fun unsafe SDL_QuitSubSystem as ^ { `SDLSubSystem' } -> `()' #}
+
+liftBaseThreaded :: (MonadBase IO m, MonadBaseControl IO m) =>
+                    (forall a. m a -> t m a) -> (forall a. t m a -> m a) -> (forall a. t m a -> m a) -> (forall a. StM m a -> StM (t m) a) ->
+                    (RunInBase (t m) IO -> IO a) -> t m a
+liftBaseThreaded wrap unwrap with st f = wrap $ do
+  id <- liftBase myThreadId
+  liftBaseWith $ \x -> f $ \b -> do
+    nid <- liftBase myThreadId
+    liftM st $ x $ (if id /= nid then with else unwrap) b
 
 freeSDL :: Ptr a -> IO ()
 freeSDL = {#call SDL_free as ^ #} . castPtr

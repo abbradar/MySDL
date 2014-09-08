@@ -17,11 +17,7 @@ import Control.Monad.Fix (MonadFix)
 import Control.Monad.Base (MonadBase(..))
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Logger (MonadLogger)
-import Control.Monad.Trans.Control (MonadTransControl(..),
-                                    MonadBaseControl(..),
-                                    ComposeSt,
-                                    defaultLiftBaseWith,
-                                    defaultRestoreM)
+import Control.Monad.Trans.Control (MonadBaseControl(..))
 
 import Graphics.UI.SDL.Internal.Prim
 import Graphics.UI.SDL.Class
@@ -42,15 +38,10 @@ deriving instance MonadSDLVideo m => MonadSDLVideo (SDLTimerT m)
 deriving instance MonadSDLAudio m => MonadSDLAudio (SDLTimerT m)
 deriving instance MonadSDLEvents m => MonadSDLEvents (SDLTimerT m)
 
-instance MonadTransControl SDLTimerT where
-     newtype StT SDLTimerT a = StT {unStT :: a}
-     liftWith f = SDLTimerT $ f $ runSDLTimerT . liftM StT
-     restoreT = SDLTimerT . liftM unStT
-
-instance MonadBaseControl IO m => MonadBaseControl IO (SDLTimerT m) where
-  newtype StM (SDLTimerT m) a = StM {unStM :: ComposeSt SDLTimerT m a}
-  liftBaseWith = defaultLiftBaseWith StM
-  restoreM = defaultRestoreM unStM
+instance (MonadBaseControl IO m, MonadSDL m) => MonadBaseControl IO (SDLTimerT m) where
+  newtype StM (SDLTimerT m) a = StM {unStM :: StM m a}
+  liftBaseWith = liftBaseThreaded SDLTimerT runSDLTimerT withSDLTimer StM
+  restoreM = SDLTimerT . restoreM . unStM
 
 withSDLTimer :: (MonadBaseControl IO m, MonadSDL m) => SDLTimerT m a -> m a
 withSDLTimer = withSubSystem Timer . runSDLTimerT

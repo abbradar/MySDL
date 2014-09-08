@@ -18,11 +18,7 @@ import Control.Monad.Fix (MonadFix)
 import Control.Monad.Base (MonadBase(..))
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Logger (MonadLogger)
-import Control.Monad.Trans.Control (MonadTransControl(..),
-                                    MonadBaseControl(..),
-                                    ComposeSt,
-                                    defaultLiftBaseWith,
-                                    defaultRestoreM)
+import Control.Monad.Trans.Control (MonadBaseControl(..))
 
 import Graphics.UI.SDL.Internal.Prim
 import Graphics.UI.SDL.Class
@@ -43,15 +39,10 @@ deriving instance MonadSDLVideo m => MonadSDLVideo (SDLEventsT m)
 deriving instance MonadSDLAudio m => MonadSDLAudio (SDLEventsT m)
 deriving instance MonadSDLTimer m => MonadSDLTimer (SDLEventsT m)
 
-instance MonadTransControl SDLEventsT where
-     newtype StT SDLEventsT a = StT {unStT :: a}
-     liftWith f = SDLEventsT $ f $ runSDLEventsT . liftM StT
-     restoreT = SDLEventsT . liftM unStT
+instance (MonadBaseControl IO m, MonadSDL m) => MonadBaseControl IO (SDLEventsT m) where
+  newtype StM (SDLEventsT m) a = StM {unStM :: StM m a}
+  liftBaseWith = liftBaseThreaded SDLEventsT runSDLEventsT withSDLEvents StM
+  restoreM = SDLEventsT . restoreM . unStM
 
-instance MonadBaseControl IO m => MonadBaseControl IO (SDLEventsT m) where
-  newtype StM (SDLEventsT m) a = StM {unStM :: ComposeSt SDLEventsT m a}
-  liftBaseWith = defaultLiftBaseWith StM
-  restoreM = defaultRestoreM unStM
-  
 withSDLEvents :: (MonadBaseControl IO m, MonadSDL m) => SDLEventsT m a -> m a
 withSDLEvents = withSubSystem Events . runSDLEventsT

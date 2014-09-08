@@ -14,7 +14,7 @@ import qualified Data.BitSet.Word as B
 
 import Data.Enum.Num
 
-{#import Graphics.UI.SDL.Video.Keyboard #}
+{#import Graphics.UI.SDL.Video.Keyboard.Types #}
 
 #include <SDL2/SDL_keyboard.h>
 
@@ -24,8 +24,8 @@ import Data.Enum.Num
 
 fromCKeySym :: CKeySym -> IO KeySym
 fromCKeySym ks = do
-  scanCode <- toEnum' <$> {#get SDL_Keysym->scancode #} ks
-  keyCode <- toEnum' <$> {#get SDL_Keysym->sym #} ks
+  _scanCode <- toEnum' <$> {#get SDL_Keysym->scancode #} ks
+  _keyCode <- toEnum' <$> {#get SDL_Keysym->sym #} ks
   bf <- {#get SDL_Keysym->mod #} ks
 
   let mods = [ (KmodLshift, ModLShift)
@@ -40,6 +40,6 @@ fromCKeySym ks = do
              , (KmodCaps, ModCaps)
              , (KmodMode, ModMode)
              ]
-      keyMod = B.fromList $ map snd $ filter (\(m, _) -> bf .&. m /= 0) $ map (\(a, b) -> (fromEnum' a, b)) mods
+      _keyMod = B.fromList $ map snd $ filter (\(m, _) -> bf .&. m /= 0) $ map (\(a, b) -> (fromEnum' a, b)) mods
 
   return KeySym { .. }
