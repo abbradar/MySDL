@@ -15,10 +15,12 @@ module Graphics.UI.SDL.Video.Keyboard
 
 import Control.Applicative ((<$>))
 import Control.Monad (liftM)
-import Control.Concurrent.MVar (MVar,
-                                newMVar,
-                                takeMVar,
-                                putMVar)
+import Control.Concurrent.MVar.Lifted ( MVar
+                                      , newMVar
+                                      , takeMVar
+                                      , putMVar
+                                      , withMVar
+                                      )
 import Control.Exception (bracket_)
 import Control.Monad.Base (liftBase)
 import Data.ByteString (ByteString, packCString, useAsCString)
@@ -43,10 +45,8 @@ keyNameGuard :: MVar ()
 keyNameGuard = unsafePerformIO $ newMVar ()
 
 keyName :: KeyCode -> ByteString
-keyName c = unsafeDupablePerformIO $ bracket_
-            (takeMVar keyNameGuard)
-            (putMVar keyNameGuard ())
-            $ sdlCall "SDL_GetKeyName" (sDLGetKeyName $ fromEnum c) (not . B.null)
+keyName c = unsafeDupablePerformIO $ withMVar keyNameGuard $ const $
+            sdlCall "SDL_GetKeyName" (sDLGetKeyName $ fromEnum c) (not . B.null)
   where {#fun unsafe SDL_GetKeyName as ^
          {`Int'} -> `ByteString' packCString* #}
 
