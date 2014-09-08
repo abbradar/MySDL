@@ -25,7 +25,7 @@ import Graphics.UI.SDL.Events
 import Graphics.UI.SDL.Events.Types
 import FRP.Netwire.SDL.State
 
-sdlSession :: MonadSDL m => Session m (s -> Timed Integer s)
+sdlSession :: MonadSDL m => Session m (s -> Timed Milli s)
 sdlSession =
   Session $ do
     t0 <- getTicks
@@ -35,7 +35,7 @@ sdlSession =
     loop t' = Session $ do
       t <- getTicks
       let !dt = fromIntegral $ t - t'
-      return (Timed dt, loop t)
+      return (Timed (MkFixed dt), loop t)
 
 data IState = IState { oldTime :: Ticks
                      , nextEvents :: [EventData]
@@ -67,7 +67,7 @@ sdlStep (InternalState is') s w i = do
           | otherwise -> first (d :) <$> getEv
     
   (es, nes) <- first (nextEvents is ++) <$> getEv
-  let !dt = MkFixed $ fromIntegral $ tf - oldTime is
+  let !dt = fromIntegral $ tf - oldTime is
 
   ss <- nextState (state is) es
 
@@ -75,4 +75,4 @@ sdlStep (InternalState is') s w i = do
                                    , nextEvents = nes
                                    , state = ss
                                    }
-  stepWire w (Timed dt (ss, s)) i
+  stepWire w (Timed (MkFixed dt) (ss, s)) i
