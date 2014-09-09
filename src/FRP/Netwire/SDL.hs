@@ -1,21 +1,20 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module FRP.Netwire.SDL
-       ( sdlSession
-       , InternalState
-       , newInternalState
-       , SDLWire
+       ( SDLWire
+       , SDLSession
        , sdlStep
+       , sdlSession
        ) where
 
 import Data.Monoid (mempty)
-import Control.Monad.Base (liftBase)
 import Control.Applicative ((<$>))
 import Control.Arrow (first)
 import Control.Wire.Core (Wire, stepWire)
 import Control.Wire.Session
-import Data.IORef
 import Data.Fixed (Milli, Fixed(..))
 
 import Graphics.UI.SDL.Class
@@ -25,54 +24,36 @@ import Graphics.UI.SDL.Events
 import Graphics.UI.SDL.Events.Types
 import FRP.Netwire.SDL.State
 
-sdlSession :: MonadSDL m => Session m (s -> Timed Milli s)
-sdlSession =
-  Session $ do
-    t0 <- getTicks
-    return (Timed 0, loop t0)
-
-  where
-    loop t' = Session $ do
-      t <- getTicks
-      let !dt = fromIntegral $ t - t'
-      return (Timed (MkFixed dt), loop t)
-
-data IState = IState { oldTime :: Ticks
-                     , nextEvents :: [EventData]
-                     , state :: State
-                     }
-
-newtype InternalState = InternalState (IORef IState)
-
-newInternalState :: MonadSDL m => m InternalState
-newInternalState = do
-  t0 <- getTicks
-  liftBase $ InternalState <$> newIORef IState { oldTime = t0
-                                               , nextEvents = []
-                                               , state = mempty
-                                               }
-
 type SDLWire s = Wire (Timed Milli (State, s))
 
-sdlStep :: MonadSDLVideo m => InternalState -> s -> SDLWire s e m a b -> Either e a -> m (Either e b, SDLWire s e m a b)
-sdlStep (InternalState is') s w i = do
-  is <- liftBase $ readIORef is'
-  pumpEvents
-  tf <- getTicks
+newtype SDLSession m = SDLSession { sdlStep :: SDLStep m }
 
-  let getEv = pollEvent >>= \case
-        Nothing -> return ([], [])
-        Just (Event t d)
-          | t > tf -> return ([], [d])
-          | otherwise -> first (d :) <$> getEv
+type SDLStep m = forall s e a b. s -> SDLWire s e m a b -> Either e a ->
+                 m (Either e b, SDLWire s e m a b, SDLSession m)
+
+sdlSession :: forall m. (MonadSDLVideo m) => m (SDLSession m)
+sdlSession =
+  do
+    t0 <- getTicks
+    return $ SDLSession $ loop t0 [] mempty
+
+  where
+    loop :: Ticks -> [EventData] -> State -> SDLStep m
+    loop oldTime nextEvents state s w' a = do
+      pumpEvents
+      tf <- getTicks
+
+      let getEv = pollEvent >>= \case
+            Nothing -> return ([], [])
+            Just (Event t d)
+              | t > tf -> return ([], [d])
+              | otherwise -> first (d :) <$> getEv
     
-  (es, nes) <- first (nextEvents is ++) <$> getEv
-  let !dt = fromIntegral $ tf - oldTime is
+      (es, nes) <- first (nextEvents ++) <$> getEv
+      let !dt = fromIntegral $ tf - oldTime
 
-  ss <- nextState (state is) es
+      ss <- nextState state es
 
-  liftBase $ writeIORef is' IState { oldTime = tf
-                                   , nextEvents = nes
-                                   , state = ss
-                                   }
-  stepWire w (Timed (MkFixed dt) (ss, s)) i
+      (b, w) <- stepWire w' (Timed (MkFixed dt) (ss, s)) a
+
+      return $ (b, w, SDLSession $ loop tf nes ss)
