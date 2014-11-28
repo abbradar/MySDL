@@ -40,20 +40,14 @@ library
                        Graphics.UI.SDL.Version
                        Graphics.UI.SDL.Utils.Framerate
                        
-                       Graphics.Rendering.OpenGL.Safe
-                       Graphics.Rendering.OpenGL.Safe.Shaders
-                       
                        FRP.Netwire.Extra
                        FRP.Netwire.SDL
                        FRP.Netwire.SDL.State
                        FRP.Netwire.SDL.Types
                        FRP.Netwire.SDL.Wires
 
-                       Data.Enum.Num
                        Control.Lens.Instances
                        Control.Lens.Extra
-                       Control.Monad.Maybe
-                       Data.Text.Foreign.Extra
 
   other-modules:       Graphics.UI.SDL.Internal.Prim
                        Graphics.UI.SDL.Internal.Class
@@ -64,6 +58,9 @@ library
                        Graphics.UI.SDL.Video.Internal.SysWM
                        Graphics.UI.SDL.Video.Internal.Surface
                        Graphics.UI.SDL.Events.Internal.Types
+
+                       Data.Enum.Num
+                       Data.Text.Foreign.Extra
 
   -- other-extensions:    
   build-tools:         c2hs

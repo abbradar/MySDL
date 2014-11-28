@@ -1,4 +1,4 @@
-module Data.Enum.Num  where
+module Data.Enum.Num where
 
 fromEnum' :: (Enum a, Num b) => a -> b
 fromEnum' = fromIntegral . fromEnum
