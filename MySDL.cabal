@@ -62,7 +62,23 @@ library
                        Data.Enum.Num
                        Data.Text.Foreign.Extra
 
-  -- other-extensions:    
+  default-extensions:  LambdaCase
+                     , RankNTypes
+                     , TypeFamilies
+                     , ViewPatterns
+                     , GeneralizedNewtypeDeriving
+                     , RecordWildCards
+                     , ScopedTypeVariables
+                     , NamedFieldPuns
+                     , BangPatterns
+                     , FlexibleInstances
+                     , MultiParamTypeClasses
+                     , FlexibleContexts
+                     , StandaloneDeriving
+                     , FunctionalDependencies
+
+  other-extensions:    TemplateHaskell
+
   build-tools:         c2hs
   build-depends:       base >=4.7,
                        -- Containers

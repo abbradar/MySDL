@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Graphics.UI.SDL.Events
        ( pollEvent
        , unsafePollEvent

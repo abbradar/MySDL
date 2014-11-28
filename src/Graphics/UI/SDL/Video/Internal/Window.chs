@@ -1,6 +1,3 @@
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-
 module Graphics.UI.SDL.Video.Internal.Window where
 
 import Foreign.ForeignPtr.Safe (ForeignPtr,

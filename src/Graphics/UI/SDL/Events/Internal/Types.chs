@@ -1,6 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
-
 module Graphics.UI.SDL.Events.Internal.Types
        ( CEvent
        , ceventToEvent

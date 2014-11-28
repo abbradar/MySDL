@@ -1,8 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-
 module FRP.Netwire.SDL.Wires where
 
 import Prelude hiding ((.))

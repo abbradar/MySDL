@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module FRP.Netwire.Extra where
 
 import Prelude hiding ((.))

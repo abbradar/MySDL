@@ -1,5 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-
 module Control.Lens.Extra where
 
 import Control.Applicative

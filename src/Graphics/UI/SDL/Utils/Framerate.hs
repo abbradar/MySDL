@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module Graphics.UI.SDL.Utils.Framerate
        ( FPSLimit
        , runFPSLimit

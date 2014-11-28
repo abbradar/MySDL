@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 module Graphics.UI.SDL.Video.Internal.Mouse
        ( MouseButton
        , mouseLeft

@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module Graphics.UI.SDL.Video.Internal.Keyboard
        ( CKeySym
        , fromCKeySym

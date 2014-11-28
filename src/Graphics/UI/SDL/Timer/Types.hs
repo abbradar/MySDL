@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 module Graphics.UI.SDL.Timer.Types
        ( Ticks(..)
        ) where

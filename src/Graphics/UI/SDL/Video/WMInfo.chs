@@ -1,6 +1,4 @@
 {-# OPTIONS_GHC -fno-warn-overlapping-patterns #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ViewPatterns #-}
 
 module Graphics.UI.SDL.Video.WMInfo
        ( WMInfo

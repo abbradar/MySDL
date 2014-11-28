@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes #-}
-
 module Graphics.UI.SDL.Internal.Prim
        ( SDLBool(..)
        , sdlCall

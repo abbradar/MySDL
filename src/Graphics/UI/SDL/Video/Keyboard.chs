@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Graphics.UI.SDL.Video.Keyboard
          ( keyName
          , keyFromName

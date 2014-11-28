@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module Graphics.UI.SDL.Internal.Class where
 
 import Control.Monad.Base (MonadBase)
