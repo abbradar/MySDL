@@ -32,7 +32,8 @@ sdlOnState t = mkPure $ \(stateData -> s) _ -> (maybe (Left mempty) Right $ s ^?
 
 whileKey :: (HasSDLState s, Monoid s, Monoid e, Monad m) => KeyState -> KeyCode -> Wire s e m a WindowState
 whileKey s k = sdlOnState $ windowState . traversed . (if s == Pressed then hasInside l else hasn'tInside l)
-  where l = keysPressed . ix k
+  where l :: Applicative f => (() -> f ()) -> WindowState -> f WindowState
+        l = keysPressed . ix k
 
 onKey :: (HasSDLState s, Monoid s, Monad m) => KeyState -> KeyCode -> Wire s e m a (Event KeyboardEvent)
 onKey state key = sdlOnEvent $ _Window . _2 . _Keyboard . eqInside kstate state . eqInside (keySym . keyCode) key
