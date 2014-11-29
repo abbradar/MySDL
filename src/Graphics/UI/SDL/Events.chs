@@ -9,7 +9,6 @@ module Graphics.UI.SDL.Events
 
 import Foreign.C.Types (CInt(..))
 import Foreign.Marshal.Alloc (allocaBytesAligned)
-import Control.Applicative ((<$>))
 import Control.Monad.Base (liftBase)
 import Control.Concurrent (threadDelay)
 import Control.Exception.Lifted (mask_)
@@ -25,7 +24,7 @@ pollEvent' :: MonadSDLEvents m => (CEvent -> IO CInt) -> m (Maybe Event)
 pollEvent' call = liftBase $ allocaBytesAligned {#sizeof SDL_Event #} {#alignof SDL_Event #} $ \p -> mask_ $ do
                     call p >>= \case
                       0 -> return Nothing
-                      1 -> Just <$> ceventToEvent p
+                      1 -> ceventToEvent p
                       _ -> fail "SDL_PollEvent: Unknown return code"
 
 pollEvent :: MonadSDLEvents m => m (Maybe Event)

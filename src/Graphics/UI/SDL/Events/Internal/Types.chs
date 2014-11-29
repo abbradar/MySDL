@@ -9,7 +9,7 @@ import Foreign.Storable (peekByteOff)
 import Control.Applicative ((<$>))
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Class (lift)
-import Control.Monad (guard)
+import Control.Monad (msum)
 import Data.Maybe (fromMaybe)
 import Control.Exception (bracket)
 import Text.Printf (printf)
@@ -18,7 +18,6 @@ import Data.Word
 
 import Graphics.UI.SDL.Types
 import Data.Enum.Num
-import Control.Monad.Maybe
 import Data.Text.Foreign.Extra
 import Graphics.UI.SDL.Internal.Prim (freeSDL)
 import Graphics.UI.SDL.Video.Internal.Mouse
@@ -36,7 +35,10 @@ import Graphics.UI.SDL.Video.Internal.Window (WindowID(..))
 {#enum SDL_EventType as CEventType {underscoreToCase}
     deriving (Eq, Show) #}
 
-getVec :: (b -> c) -> (a -> IO b) -> (a -> IO b) -> a -> IO (Vector2 c)
+esum :: CEventType -> CEvent -> [CEventType -> CEvent -> MaybeT IO a] -> IO (Maybe a)
+esum t e = runMaybeT . msum . map (\f -> f t e)
+
+getVec :: (b -> c) -> (a -> IO b) -> (a -> IO b) -> a -> IO (Point c)
 getVec f f1 f2 e = do
   x <- f <$> f1 e
   y <- f <$> f2 e
@@ -51,8 +53,8 @@ fromCUInt (CUInt a) = a
 fromCFloat :: CFloat -> Float
 fromCFloat (CFloat a) = a
 
-ctextToEvent :: CEventType -> CEvent -> IO (Maybe WindowEvent)
-ctextToEvent t e = runMaybeT $ do
+ctextToEvent :: CEventType -> CEvent -> MaybeT IO WindowEvent
+ctextToEvent t e = do
   d <- MaybeT $ case t of
     SdlTextediting -> do
       CInt _tstart <- {#get SDL_TextEditingEvent->start #} e
@@ -92,8 +94,8 @@ cwindowToData ev = toEnum' <$> {#get SDL_WindowEvent->event #} ev >>= \case
     SdlWindoweventClose -> return Closed
     e -> fail $ printf "Unknown window event: %s" $ show e
 
-cmouseToEvent :: CEventType -> CEvent -> IO (Maybe WindowEvent)
-cmouseToEvent t e = runMaybeT $ do
+cmouseToEvent :: CEventType -> CEvent -> MaybeT IO WindowEvent
+cmouseToEvent t e = do
   d <- MaybeT $ case t of
     SdlMousemotion -> do
       mstates <- mmaskToButtons <$> fromCUInt <$> {#get SDL_MouseMotionEvent->state #} e
@@ -122,21 +124,20 @@ cmouseToEvent t e = runMaybeT $ do
 
           return $ Just $ MButton MouseButtonEvent { .. }
 
-cwindowToEvent :: CEventType -> CEvent -> IO (Maybe EventData)
-cwindowToEvent t e = runMaybeT $ do
+cwindowToEvent :: CEventType -> CEvent -> MaybeT IO (Maybe EventData)
+cwindowToEvent t e = do
   d <- MaybeT $ case t of
     SdlWindowevent -> Just <$> cwindowToData e
     SdlKeydown -> kbdbutton Pressed
     SdlKeyup -> kbdbutton Released
-    _ -> sequenceMaybe $ map (\f -> f t e)
-         [ ctextToEvent
-         , cmouseToEvent
-         ]
+    _ -> esum t e [ ctextToEvent
+                  , cmouseToEvent
+                  ]
   
-  -- TODO: Sometimes SDL will send strange events with WindowID == 0. Let's ignore them for now.
-  wid <- lift $ {#get SDL_WindowEvent->windowID #} e
-  guard $ wid /= 0
-  return $ Window (WindowID wid) d
+  -- Sometimes SDL will send strange events with WindowID == 0. Let's ignore them for now.
+  lift ({#get SDL_WindowEvent->windowID #} e) >>= return . \case
+    0 -> Nothing
+    wid -> Just $ Window (WindowID wid) d
 
   where kbdbutton _kstate = do
           _krepeat <- (\a -> if a /= 0 then True else False) <$> {#get SDL_KeyboardEvent->repeat #} e
@@ -155,8 +156,8 @@ cwindowToEvent t e = runMaybeT $ do
                       , SDL_HAT_LEFTDOWN as CLeftDown
                       } deriving (Eq, Show) #}
 
-cjoyToEvent :: CEventType -> CEvent -> IO (Maybe EventData)
-cjoyToEvent t e = runMaybeT $ do
+cjoyToEvent :: CEventType -> CEvent -> MaybeT IO (Maybe EventData)
+cjoyToEvent t e = Just <$> do
   d <- MaybeT $ case t of
     SdlJoyaxismotion -> do
       axis <- {#get SDL_JoyAxisEvent->axis #} e
@@ -209,8 +210,8 @@ cjoyToEvent t e = runMaybeT $ do
 
           return $ Just $ ControllerButton cbutton cstate
 
-ctouchToEvent :: CEventType -> CEvent -> IO (Maybe EventData)
-ctouchToEvent t e = runMaybeT $ do
+ctouchToEvent :: CEventType -> CEvent -> MaybeT IO (Maybe EventData)
+ctouchToEvent t e = Just <$> do
   d <- MaybeT $ case t of
     SdlFingermotion -> touch Pressed True
     SdlFingerdown -> touch Pressed False
@@ -263,20 +264,17 @@ csyswmToEvent e = do
   return $ SysWM wm
 
 -- For complete safety from memory leaks, this should be called in masked environment.
-ceventToEvent :: CEvent -> IO Event
+ceventToEvent :: CEvent -> IO (Maybe Event)
 ceventToEvent ev = do
   ts <- fromIntegral <$> {#get SDL_CommonEvent->timestamp #} ev
   d <- toEnum' <$> {#get SDL_CommonEvent->type #} ev >>= \case
-    SdlQuit -> return Quit
-    SdlSyswmevent -> csyswmToEvent ev
-    SdlDropfile -> do
-      file <- bracket ({#get SDL_DropEvent->file #} ev) freeSDL peekCString
-
-      return $ Drop file
-    e -> fromMaybe (error $ printf "Unsupported event type: %s" $ show e) <$> (sequenceMaybe $ map (\f -> f e ev)
+    SdlQuit -> return $ Just Quit
+    SdlSyswmevent -> Just <$> csyswmToEvent ev
+    SdlDropfile -> Just <$> Drop <$> bracket ({#get SDL_DropEvent->file #} ev) freeSDL peekCString
+    e -> fromMaybe (error $ printf "Unsupported event type: %s" $ show e) <$> (esum e ev
          [ cwindowToEvent
          , cjoyToEvent
          , ctouchToEvent
          ])
 
-  return $ Event ts d
+  return $ fmap (Event ts) d
