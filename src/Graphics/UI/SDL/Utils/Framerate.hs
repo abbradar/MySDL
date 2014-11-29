@@ -1,7 +1,7 @@
 module Graphics.UI.SDL.Utils.Framerate
        ( FPSLimit
-       , runFPSLimit
-       , limitFPS
+       , fpsLimit
+       , fpsSession
        ) where
 
 import Data.Int
@@ -11,10 +11,10 @@ import Control.Monad.Base (liftBase)
 import Graphics.UI.SDL.Timer
 import Graphics.UI.SDL.Class
 
-newtype FPSLimit m = FPSLimit { runFPSLimit :: (Int32 -> m (Int32, FPSLimit m)) }
+newtype FPSLimit m = FPSLimit { fpsLimit :: (Int32 -> m (Int32, FPSLimit m)) }
 
-limitFPS :: MonadSDL m => m (FPSLimit m)
-limitFPS = getTicks >>= return . FPSLimit . loop
+fpsSession :: MonadSDL m => m (FPSLimit m)
+fpsSession = getTicks >>= return . FPSLimit . loop
   where
     loop old limit = do
       let target = old + fromIntegral limit
