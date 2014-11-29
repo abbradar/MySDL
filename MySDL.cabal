@@ -2,11 +2,10 @@
 -- see http://haskell.org/cabal/users-guide/
 
 name:                MySDL
-version:             0.1.0.3
+version:             0.1.0.4
 -- synopsis:            
 -- description:         
 license:             BSD3
-license-file:        LICENSE
 author:              Nikolay Amiantov
 maintainer:          nikoamia@gmail.com
 -- copyright:           

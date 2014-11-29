@@ -9,15 +9,15 @@ import Data.BitSet.Generic (BitSet)
 import qualified Data.BitSet.Generic as B
 
 type instance Index (BitSet c a) = a
+type instance IxValue (BitSet c a) = ()
 
 instance (Bits c, Enum k) => Contains (BitSet c k) where
   contains k f s = f (B.member k s) <&> \b ->
     if b then B.insert k s else B.delete k s
 
-type instance IxValue (BitSet c a) = ()
 instance (Bits c, Enum k) => Ixed (BitSet c k) where
   ix k f m = if B.member k m
-     then f () <&> \() -> B.insert k m
+     then f () <&> const (B.insert k m)
      else pure m
 
 instance (Bits c, Enum k) => At (BitSet c k) where

@@ -10,7 +10,6 @@ import Control.Applicative ((<$>))
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Class (lift)
 import Control.Monad (msum)
-import Data.Maybe (fromMaybe)
 import Control.Exception (bracket)
 import Text.Printf (printf)
 import Data.Int
@@ -271,10 +270,10 @@ ceventToEvent ev = do
     SdlQuit -> return $ Just Quit
     SdlSyswmevent -> Just <$> csyswmToEvent ev
     SdlDropfile -> Just <$> Drop <$> bracket ({#get SDL_DropEvent->file #} ev) freeSDL peekCString
-    e -> fromMaybe (error $ printf "Unsupported event type: %s" $ show e) <$> (esum e ev
+    e -> maybe (fail $ printf "Unsupported event type: %s" $ show e) return =<< esum e ev
          [ cwindowToEvent
          , cjoyToEvent
          , ctouchToEvent
-         ])
+         ]
 
   return $ fmap (Event ts) d
