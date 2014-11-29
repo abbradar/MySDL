@@ -7,6 +7,7 @@ import Data.Map.Strict (Map)
 import Data.Set (Set)
 import Control.Lens
 
+import Graphics.UI.SDL.Types
 import Graphics.UI.SDL.Events.Types
 import Graphics.UI.SDL.Video.Mouse
 import Graphics.UI.SDL.Video.Window
@@ -24,7 +25,7 @@ data WindowState = WindowState { _keysPressed :: Set KeyCode
                                , _modsPressed :: BW.BitSet KeyMod
                                , _mouseState :: Map WhichMouse MouseState
                                , _shown :: Bool
-                               , _pos :: Point
+                               , _pos :: PosPoint
                                , _size :: Size
                                , _mouseFocus :: Bool
                                , _kbdFocus :: Bool

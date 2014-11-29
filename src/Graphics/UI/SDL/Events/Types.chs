@@ -2,13 +2,15 @@
 
 module Graphics.UI.SDL.Events.Types where
 
--- TODO: Rename all fields marked with "*" when OverloadedRecordFields
+-- Almost everything in this module is strict, because we get events
+-- "precomputed" from SDL.
+
+-- TODO: Rename all fields marked with "ORF" when OverloadedRecordFields
 -- will be out (in GHC 7.10, probably).
 
 import Data.Word
 import Data.Int
 import Data.Text (Text)
-import Graphics.Rendering.OpenGL.GL.Tensor (Vector2(..))
 import Foreign.C.Types (CInt(..), CUInt(..), CUChar(..))
 import Control.Lens.TH
 
@@ -16,18 +18,24 @@ import Graphics.UI.SDL.Timer.Types
 import Graphics.UI.SDL.Video.Keyboard.Types
 import Graphics.UI.SDL.Video.Window
 import Graphics.UI.SDL.Video.Mouse
+import Graphics.UI.SDL.Types
 
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_mouse.h>
-  
+
+-- We keep all IDs in their C types without conversion.
 type JoyIndex = CUChar
-type Position = Int32
+type JoyInstance = CInt
+type JoyID = CUInt
+type TouchID = CInt
+
+type TouchPoint = Point Float
 
 {#enum define KeyState { SDL_RELEASED as Released
                        , SDL_PRESSED as Pressed
                        } deriving (Show, Eq) #}
 
-data KeyboardEvent = KeyboardEvent { _kstate :: !KeyState -- *
+data KeyboardEvent = KeyboardEvent { _kstate :: !KeyState -- ORF
                                    , _krepeat :: !Bool
                                    , _keySym :: !KeySym
                                    }
@@ -35,17 +43,10 @@ data KeyboardEvent = KeyboardEvent { _kstate :: !KeyState -- *
 
 makeLenses ''KeyboardEvent
 
-type JoyInstance = CInt
-type JoyID = CUInt
-type TouchID = CInt
-
-type PosVec = Vector2 Position
-type TouchPosVec = Vector2 Float
-
 data TextEditingEvent = TextEditingEvent { _tstart :: !Int32
                                          , _tlength :: !Int32
                                          }
-                        deriving (Eq, Show)
+                      deriving (Eq, Show)
 
 makeLenses ''TextEditingEvent
 
@@ -55,18 +56,18 @@ data TextEvent = Editing !TextEditingEvent
 
 makePrisms ''TextEvent
 
-data MouseMotionEvent = MouseMotionEvent { mstates :: MouseButtonState -- *, this is needed rarely and computed slowly
-                                         , mrel :: !MousePosition -- *
-                                         , mmpos :: !MousePosition -- *
+data MouseMotionEvent = MouseMotionEvent { mstates :: MouseButtonState -- ORF, this is needed rarely and computed slowly
+                                         , mrel :: !MousePosition -- ORF
+                                         , mmpos :: !MousePosition -- ORF
                                          }
                       deriving (Eq, Show)
 
 makeLenses ''MouseMotionEvent
 
-data MouseButtonEvent = MouseButtonEvent { mbutton :: !MouseButton -- *
-                                         , mstate :: !KeyState -- *
+data MouseButtonEvent = MouseButtonEvent { mbutton :: !MouseButton -- ORF
+                                         , mstate :: !KeyState -- ORF
                                          , clicks :: !Word8
-                                         , mbpos :: !MousePosition -- *
+                                         , mbpos :: !MousePosition -- ORF
                                          }
                       deriving (Eq, Show)
 
@@ -74,7 +75,7 @@ makeLenses ''MouseButtonEvent
 
 data MouseEvent = MMotion !MouseMotionEvent
                 | MButton !MouseButtonEvent
-                | MWheel !PosVec
+                | MWheel !PosPoint
                 deriving (Eq, Show)
 
 makePrisms ''MouseEvent
@@ -85,7 +86,7 @@ data WhichMouse = MouseTouch | MouseID !CUInt
 data WindowEvent = Shown
                  | Hidden
                  | Exposed
-                 | Moved !Point
+                 | Moved !PosPoint
                  | Resized !Size
                  | SizeChanged !Size
                  | Minimized
@@ -113,7 +114,7 @@ data JoyHat = JoyHat !XAxis !YAxis
            deriving (Eq, Show)
 
 data JoystickEvent = Axis !JoyIndex !Position
-                   | Ball !JoyIndex !PosVec
+                   | Ball !JoyIndex !PosPoint
                    | Hat !JoyIndex !JoyHat
                    | Button !JoyIndex !KeyState
                    | Removed
@@ -136,15 +137,15 @@ makePrisms ''WMEvent
 data TouchFingerEvent = TouchFingerEvent { finger :: !CInt
                                          , fstate :: !KeyState
                                          , moving :: !Bool
-                                         , tfpos :: !TouchPosVec -- *
-                                         , trel :: !TouchPosVec -- *
+                                         , tfpos :: !TouchPoint -- ORF
+                                         , trel :: !TouchPoint -- ORF
                                          , pressure :: !Float
                                          }
                       deriving (Eq, Show)
 
 data TouchGestureEvent = TouchGestureEvent { theta :: !Float
                                            , dist :: !Float
-                                           , tgpos :: !TouchPosVec -- *
+                                           , tgpos :: !TouchPoint -- ORF
                                            , gfingers :: !Word16
                                            }
                        deriving (Eq, Show)
@@ -152,7 +153,7 @@ data TouchGestureEvent = TouchGestureEvent { theta :: !Float
 data TouchDollarEvent = TouchDollarEvent { gesture :: !CInt
                                          , dfingers :: !Word32
                                          , gerror :: !Float
-                                         , tdpos :: !TouchPosVec -- *
+                                         , tdpos :: !TouchPoint -- ORF
                                          }
                       deriving (Eq, Show)
 

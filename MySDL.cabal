@@ -17,6 +17,7 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     Graphics.UI.SDL
+                       Graphics.UI.SDL.Types
                        Graphics.UI.SDL.Class
                        Graphics.UI.SDL.Monad
                        Graphics.UI.SDL.Video
@@ -80,30 +81,26 @@ library
   other-extensions:    TemplateHaskell
 
   build-tools:         c2hs
-  build-depends:       base >=4.7,
+  build-depends:       base >=4.7
                        -- Containers
-                       containers,
-                       bitset,
-                       text,
-                       bytestring,
-                       -- For logging
-                       monad-logger,
-                       fast-logger,
-                       file-location,
+                     , containers
+                     , bitset
+                     , text
+                     , bytestring
                        -- Transformers-related
-                       transformers,
-                       mtl,
-                       transformers-base,
-                       monad-control,
-                       lifted-base,
-                       -- OpenGL helpers
-                       OpenGL,
+                     , transformers
+                     , mtl
+                     , transformers-base
+                     , monad-control
+                     , lifted-base
+                     , monad-logger
                        -- Netwire
-                       netwire,
+                     , netwire
                        -- Lens
-                       lens
+                     , lens
   pkgconfig-depends:   sdl2
   hs-source-dirs:      src
   include-dirs:        cbits
   c-sources:           cbits/sdl_misc.c
   default-language:    Haskell2010
+  ghc-options:         -Wall

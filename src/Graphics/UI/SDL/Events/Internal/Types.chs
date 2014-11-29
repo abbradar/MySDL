@@ -11,12 +11,12 @@ import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Class (lift)
 import Control.Monad (guard)
 import Data.Maybe (fromMaybe)
-import Graphics.Rendering.OpenGL.GL.Tensor (Vector2(..))
 import Control.Exception (bracket)
 import Text.Printf (printf)
 import Data.Int
 import Data.Word
 
+import Graphics.UI.SDL.Types
 import Data.Enum.Num
 import Control.Monad.Maybe
 import Data.Text.Foreign.Extra
@@ -40,7 +40,7 @@ getVec :: (b -> c) -> (a -> IO b) -> (a -> IO b) -> a -> IO (Vector2 c)
 getVec f f1 f2 e = do
   x <- f <$> f1 e
   y <- f <$> f2 e
-  return $ Vector2 x y
+  return $ P x y
 
 fromCInt :: CInt -> Int32
 fromCInt (CInt a) = a

@@ -4,9 +4,7 @@ module Graphics.UI.SDL.Video.Window
        , SomeWindow
        , SDLWindow(toSomeWindow)
        , PositionHint(..)
-       , PointHint
-       , Size
-       , Point
+       , PositionHints
        , WindowFlags(..)
        , createWindow
        , freeWindow
@@ -43,11 +41,11 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Control.Concurrent.MVar (MVar, newMVar, modifyMVar_, readMVar)
 import System.Mem.Weak (Weak, mkWeak, deRefWeak)
-import Graphics.Rendering.OpenGL.GL.Tensor (Vector2(..))
 
 import Data.Enum.Num
 import Graphics.UI.SDL.Internal.Prim
 import Graphics.UI.SDL.Video.Monad
+import Graphics.UI.SDL.Types
 
 {#import Graphics.UI.SDL.Video.Internal.Window #}
 
@@ -62,8 +60,8 @@ foreign import ccall unsafe "SDL2/SDL_video.h &SDL_DestroyWindow"
                            } #}
 
 data PositionHint = Abs !Int32
-                 | Centered
-                 | Undefined
+                  | Centered
+                  | Undefined
                 deriving (Show, Eq)
 
 fromPositionHint :: PositionHint -> CInt
@@ -71,9 +69,7 @@ fromPositionHint (Abs x) = CInt x
 fromPositionHint Centered = fromEnum' Centered'
 fromPositionHint Undefined = fromEnum' Undefined'
 
-type PointHint = Vector2 PositionHint
-type Size = Vector2 Int32
-type Point = Vector2 Int32
+type PositionHints = Point PositionHint
 
 {#enum SDL_WindowFlags as WindowFlags {underscoreToCase} deriving (Eq, Show, Bounded) #}
 
@@ -83,8 +79,8 @@ windows :: MVar (Map WindowID (Weak SomeWindow))
 {-# NOINLINE windows #-}
 windows = unsafePerformIO $ newMVar Map.empty
 
-createWindow :: MonadSDLVideo m => ByteString -> PointHint -> Size -> [WindowFlags] -> m SomeWindow
-createWindow name (Vector2 x y) (Vector2 w h) fs = do
+createWindow :: MonadSDLVideo m => ByteString -> PositionHints -> Size -> [WindowFlags] -> m SomeWindow
+createWindow name (P x y) (P w h) fs = do
   cw <- liftBase $ mask_ $ do
     let f = foldr ((.|.) . fromEnum') 0 fs
     cw@(CWindow wh) <- unsafeUseAsCString name $ \cn ->
@@ -123,10 +119,10 @@ getWindowID (toCWindow -> w) = liftBase $ WindowID <$> sDLGetWindowID w
 getWindowFromID :: MonadSDLVideo m => WindowID -> m (Maybe SomeWindow)
 getWindowFromID i = liftBase $ readMVar windows >>= maybe (return Nothing) deRefWeak . Map.lookup i
 
-getWindowPosition :: (MonadSDLVideo m, SDLWindow a) => a -> m Point
+getWindowPosition :: (MonadSDLVideo m, SDLWindow a) => a -> m PosPoint
 getWindowPosition (toCWindow -> w) = liftBase $ do
   (CInt x, CInt y) <- sDLGetWindowPosition w
-  return $ Vector2 x y
+  return $ P x y
 
   where {#fun unsafe SDL_GetWindowPosition as ^
          { `CWindow'
@@ -137,7 +133,7 @@ getWindowPosition (toCWindow -> w) = liftBase $ do
 getWindowSize :: (MonadSDLVideo m, SDLWindow a) => a -> m Size
 getWindowSize (toCWindow -> w) = liftBase $ do
   (CInt x, CInt y) <- sDLGetWindowSize w
-  return $ Vector2 x y
+  return $ P x y
 
   where {#fun unsafe SDL_GetWindowSize as ^
          { `CWindow'
@@ -147,7 +143,7 @@ getWindowSize (toCWindow -> w) = liftBase $ do
 
 -- SDL_SetWindowSize calls SDL_PushEvent which can callback into Haskell code.
 setWindowSize' :: (MonadSDLVideo m, SDLWindow a) => (CWindow -> Int32 -> Int32 -> IO ()) -> a -> Size -> m ()
-setWindowSize' call (toCWindow -> win) (Vector2 w h) = liftBase $ call win w h
+setWindowSize' call (toCWindow -> win) (P w h) = liftBase $ call win w h
 
 setWindowSize :: (MonadSDLVideo m, SDLWindow a) => a -> Size -> m ()
 setWindowSize = setWindowSize' sDLSetWindowSize

@@ -30,10 +30,10 @@ import Foreign.ForeignPtr.Safe (ForeignPtr,
 import Foreign.Ptr (FunPtr, Ptr)
 import Control.Monad.Base (liftBase)
 import Control.Exception.Lifted (mask_)
-import Graphics.Rendering.OpenGL.GL.Tensor (Vector2(..))
 import Data.Int
 
 import Data.Enum.Num
+import Graphics.UI.SDL.Types
 import Graphics.UI.SDL.Internal.Prim
 import Graphics.UI.SDL.Video.Monad
 import Graphics.UI.SDL.Video.Window
@@ -165,7 +165,7 @@ glSwap (GLWindow w) = liftBase $ sDLGLSwapWindow w
 glGetDrawableSize :: MonadSDLVideo m => GLWindow -> m Size
 glGetDrawableSize (GLWindow w) = liftBase $ do
   (CInt x, CInt y) <- sDLGLGetDrawableSize w
-  return $ Vector2 x y
+  return $ P x y
   
   where {#fun unsafe SDL_GL_GetDrawableSize as ^
          { `CWindow'

@@ -13,19 +13,19 @@ import Foreign.C.Types (CInt(..), CUInt(..))
 import Foreign.Ptr (Ptr)
 import Data.Int
 import Data.Word
-import Graphics.Rendering.OpenGL.GL.Tensor (Vector2(..))
 
+import Graphics.UI.SDL.Types
 import Graphics.UI.SDL.Class
 import Graphics.UI.SDL.Video.Internal.Mouse
 
 #include <SDL2/SDL_mouse.h>
 
-type MousePosition = Vector2 Int32
+type MousePosition = Point Int32
 
 getMouseState' :: MonadSDLVideo m => IO (Word32, CInt, CInt) -> m (MousePosition, MouseButtonState)
 getMouseState' call = liftBase $ do
   (f, (CInt x), (CInt y)) <- call
-  return (Vector2 x y, mmaskToButtons f)
+  return (P x y, mmaskToButtons f)
 
 getMouseState :: MonadSDLVideo m => m (MousePosition, MouseButtonState)
 getMouseState = getMouseState' sDLGetMouseState
