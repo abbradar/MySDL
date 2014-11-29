@@ -6,6 +6,7 @@ module Graphics.UI.SDL.Timer.Monad
 
 import Control.Applicative (Applicative)
 import Control.Monad.Fix (MonadFix)
+import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Base (MonadBase(..))
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Logger (MonadLogger)
@@ -23,6 +24,7 @@ instance MonadTrans SDLTimerT where
   lift = SDLTimerT
 
 deriving instance MonadBase IO m => MonadBase IO (SDLTimerT m)
+deriving instance MonadIO m => MonadIO (SDLTimerT m)
 
 instance MonadSDL m => MonadSDLTimer (SDLTimerT m) where
 deriving instance MonadSDL m => MonadSDL (SDLTimerT m)

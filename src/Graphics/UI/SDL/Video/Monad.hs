@@ -6,6 +6,7 @@ module Graphics.UI.SDL.Video.Monad
 
 import Control.Applicative (Applicative)
 import Control.Monad.Fix (MonadFix)
+import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Base (MonadBase(..))
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Logger (MonadLogger)
@@ -23,6 +24,7 @@ instance MonadTrans SDLVideoT where
   lift = SDLVideoT
 
 deriving instance MonadBase IO m => MonadBase IO (SDLVideoT m)
+deriving instance MonadIO m => MonadIO (SDLVideoT m)
 
 instance (MonadSDLTimer m, MonadSDLEvents m) => MonadSDLVideo (SDLVideoT m) where
 deriving instance MonadSDL m => MonadSDL (SDLVideoT m)

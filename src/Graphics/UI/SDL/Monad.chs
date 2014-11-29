@@ -13,6 +13,7 @@ import Foreign.C.Types (CInt(..), CUInt(..))
 import Foreign.C.String (CString)
 import Control.Applicative (Applicative)
 import Control.Monad.Fix (MonadFix)
+import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Base (MonadBase(..))
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Trans.Control (MonadBaseControl(..))
@@ -36,6 +37,7 @@ instance MonadTrans SDLT where
   lift = SDLT
 
 deriving instance MonadBase IO m => MonadBase IO (SDLT m)
+deriving instance MonadIO m => MonadIO (SDLT m)
 
 instance MonadBaseControl IO m => MonadBaseControl IO (SDLT m) where
   newtype StM (SDLT m) a = StM {unStM :: StM m a}

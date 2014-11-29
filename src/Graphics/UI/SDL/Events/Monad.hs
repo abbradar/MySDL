@@ -6,6 +6,7 @@ module Graphics.UI.SDL.Events.Monad
 
 import Control.Applicative (Applicative)
 import Control.Monad.Fix (MonadFix)
+import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Base (MonadBase(..))
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Logger (MonadLogger)
@@ -23,6 +24,7 @@ instance MonadTrans SDLEventsT where
   lift = SDLEventsT
 
 deriving instance MonadBase IO m => MonadBase IO (SDLEventsT m)
+deriving instance MonadIO m => MonadIO (SDLEventsT m)
 
 instance MonadSDL m => MonadSDLEvents (SDLEventsT m) where
 deriving instance MonadSDL m => MonadSDL (SDLEventsT m)

@@ -6,6 +6,7 @@ module Graphics.UI.SDL.Audio.Monad
 
 import Control.Applicative (Applicative)
 import Control.Monad.Fix (MonadFix)
+import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Base (MonadBase(..))
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Logger (MonadLogger)
@@ -23,6 +24,7 @@ instance MonadTrans SDLAudioT where
   lift = SDLAudioT
 
 deriving instance MonadBase IO m => MonadBase IO (SDLAudioT m)
+deriving instance MonadIO m => MonadIO (SDLAudioT m)
 
 instance MonadSDL m => MonadSDLAudio (SDLAudioT m) where
 deriving instance MonadSDL m => MonadSDL (SDLAudioT m)
