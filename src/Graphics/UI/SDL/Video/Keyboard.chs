@@ -13,17 +13,17 @@ module Graphics.UI.SDL.Video.Keyboard
 
 import Control.Applicative ((<$>))
 import Control.Monad (liftM)
-import Control.Concurrent.MVar.Lifted ( MVar
-                                      , newMVar
-                                      , withMVar
-                                      )
-import Control.Monad.Base (liftBase)
+import Control.Concurrent.MVar ( MVar
+                               , newMVar
+                               , withMVar
+                               )
 import Data.ByteString (ByteString, packCString, useAsCString)
 import qualified Data.ByteString as B
 import Data.ByteString.Unsafe (unsafePackCString)
 import System.IO.Unsafe (unsafePerformIO, unsafeDupablePerformIO)
 import Foreign.C.Types (CInt(..), CChar(..))
 import Foreign.Ptr (Ptr)
+import Control.Monad.IO.Class
 
 import Graphics.UI.SDL.Internal.Prim
 import Graphics.UI.SDL.Video.Internal.Surface
@@ -64,20 +64,20 @@ scancodeFromName c = unsafeDupablePerformIO $ sdlCall "SDL_GetScancodeFromName"
          {useAsCString* `ByteString'} -> `Int' #}
 
 scancodeFromKey :: MonadSDLVideo m => KeyCode -> m ScanCode
-scancodeFromKey = liftBase . liftM toEnum . sDLGetScancodeFromKey . fromEnum
+scancodeFromKey = liftIO . liftM toEnum . sDLGetScancodeFromKey . fromEnum
   where {#fun unsafe SDL_GetScancodeFromKey as ^
          {`Int'} -> `Int' #}
 
 keyFromScancode :: MonadSDLVideo m => ScanCode -> m KeyCode
-keyFromScancode = liftBase . liftM toEnum . sDLGetKeyFromScancode . fromEnum
+keyFromScancode = liftIO . liftM toEnum . sDLGetKeyFromScancode . fromEnum
   where {#fun unsafe SDL_GetKeyFromScancode as ^
          {`Int'} -> `Int' #}
 
 startTextInput :: MonadSDLVideo m => m ()
-startTextInput = liftBase {#call unsafe SDL_StartTextInput as ^ #}
+startTextInput = liftIO {#call unsafe SDL_StartTextInput as ^ #}
 
 stopTextInput :: MonadSDLVideo m => m ()
-stopTextInput = liftBase {#call unsafe SDL_StopTextInput as ^ #}
+stopTextInput = liftIO {#call unsafe SDL_StopTextInput as ^ #}
 
 setTextInputRect :: MonadSDLVideo m => Rect -> m ()
-setTextInputRect r = liftBase $ withCRect r {#call unsafe SDL_SetTextInputRect as ^ #}
+setTextInputRect r = liftIO $ withCRect r {#call unsafe SDL_SetTextInputRect as ^ #}

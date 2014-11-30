@@ -51,7 +51,6 @@ library
 
   other-modules:       Graphics.UI.SDL.Internal.Prim
                        Graphics.UI.SDL.Internal.Class
-                       Graphics.UI.SDL.Internal.Unsafe
                        Graphics.UI.SDL.Video.Internal.Window
                        Graphics.UI.SDL.Video.Internal.Keyboard
                        Graphics.UI.SDL.Video.Internal.Mouse
@@ -88,11 +87,7 @@ library
                      , bytestring
                        -- Transformers-related
                      , transformers
-                     , mtl
-                     , transformers-base
-                     , monad-control
-                     , lifted-base
-                     , monad-logger
+                     , exceptions
                        -- Netwire
                      , netwire
                        -- Lens

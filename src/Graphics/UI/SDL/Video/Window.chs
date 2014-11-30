@@ -31,8 +31,7 @@ import Foreign.C.Types (CChar(..), CInt(..), CUInt(..))
 import Foreign.C.String (CString)
 import Foreign.Marshal.Alloc (alloca)
 import Foreign.Storable (peek)
-import Control.Exception.Lifted (mask_)
-import Control.Monad.Base (liftBase)
+import Control.Monad.Catch
 import System.IO.Unsafe (unsafePerformIO)
 import Control.Applicative ((<$>))
 import Data.Word
@@ -41,6 +40,7 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Control.Concurrent.MVar (MVar, newMVar, modifyMVar_, readMVar)
 import System.Mem.Weak (Weak, mkWeak, deRefWeak)
+import Control.Monad.IO.Class
 
 import Data.Enum.Num
 import Graphics.UI.SDL.Internal.Prim
@@ -81,7 +81,7 @@ windows = unsafePerformIO $ newMVar Map.empty
 
 createWindow :: MonadSDLVideo m => ByteString -> PositionHints -> Size -> [WindowFlags] -> m SomeWindow
 createWindow name (P x y) (P w h) fs = do
-  cw <- liftBase $ mask_ $ do
+  cw <- liftIO $ mask_ $ do
     let f = foldr ((.|.) . fromEnum') 0 fs
     cw@(CWindow wh) <- unsafeUseAsCString name $ \cn ->
       sdlObject "SDL_CreateWindow" (\case CWindow a -> a) $ sDLCreateWindow cn x y w h f
@@ -89,7 +89,7 @@ createWindow name (P x y) (P w h) fs = do
     return cw
   let win = (if SdlWindowOpengl `elem` fs then toSomeWindow . GLWindow else toSomeWindow . Window) cw
   wid <- getWindowID win
-  liftBase $ do
+  liftIO $ do
     p <- mkWeak cw win $ Just $ modifyMVar_ windows $ return . Map.delete wid
     modifyMVar_ windows $ return . Map.insert wid p
     return win
@@ -101,26 +101,26 @@ createWindow name (P x y) (P w h) fs = do
          , `Word32' } -> `CWindow' #}
 
 freeWindow :: (MonadSDLVideo m, SDLWindow a) => a -> m ()
-freeWindow (toCWindow -> CWindow a) = liftBase $ finalizeForeignPtr a
+freeWindow (toCWindow -> CWindow a) = liftIO $ finalizeForeignPtr a
 
 windowFlags :: (MonadSDLVideo m, SDLWindow a) => a -> m [WindowFlags]
 windowFlags (toCWindow -> w) = do
-  n <- liftBase $ sDLGetWindowFlags w
+  n <- liftIO $ sDLGetWindowFlags w
   return $ filter (\f -> fromEnum f .&. n /= 0) [minBound..maxBound]
 
   where {#fun unsafe SDL_GetWindowFlags as ^
          { `CWindow' } -> `Int' #}
 
 getWindowID :: (MonadSDLVideo m, SDLWindow a) => a -> m WindowID
-getWindowID (toCWindow -> w) = liftBase $ WindowID <$> sDLGetWindowID w
+getWindowID (toCWindow -> w) = liftIO $ WindowID <$> sDLGetWindowID w
   where {#fun unsafe SDL_GetWindowID as ^
          { `CWindow' } -> `CUInt' id #}
 
 getWindowFromID :: MonadSDLVideo m => WindowID -> m (Maybe SomeWindow)
-getWindowFromID i = liftBase $ readMVar windows >>= maybe (return Nothing) deRefWeak . Map.lookup i
+getWindowFromID i = liftIO $ readMVar windows >>= maybe (return Nothing) deRefWeak . Map.lookup i
 
 getWindowPosition :: (MonadSDLVideo m, SDLWindow a) => a -> m PosPoint
-getWindowPosition (toCWindow -> w) = liftBase $ do
+getWindowPosition (toCWindow -> w) = liftIO $ do
   (CInt x, CInt y) <- sDLGetWindowPosition w
   return $ P x y
 
@@ -131,7 +131,7 @@ getWindowPosition (toCWindow -> w) = liftBase $ do
          } -> `()' #}
 
 getWindowSize :: (MonadSDLVideo m, SDLWindow a) => a -> m Size
-getWindowSize (toCWindow -> w) = liftBase $ do
+getWindowSize (toCWindow -> w) = liftIO $ do
   (CInt x, CInt y) <- sDLGetWindowSize w
   return $ P x y
 
@@ -143,7 +143,7 @@ getWindowSize (toCWindow -> w) = liftBase $ do
 
 -- SDL_SetWindowSize calls SDL_PushEvent which can callback into Haskell code.
 setWindowSize' :: (MonadSDLVideo m, SDLWindow a) => (CWindow -> Int32 -> Int32 -> IO ()) -> a -> Size -> m ()
-setWindowSize' call (toCWindow -> win) (P w h) = liftBase $ call win w h
+setWindowSize' call (toCWindow -> win) (P w h) = liftIO $ call win w h
 
 setWindowSize :: (MonadSDLVideo m, SDLWindow a) => a -> Size -> m ()
 setWindowSize = setWindowSize' sDLSetWindowSize

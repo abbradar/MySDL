@@ -6,7 +6,7 @@ module Graphics.UI.SDL.Utils.Framerate
 
 import Data.Int
 import Control.Concurrent (threadDelay)
-import Control.Monad.Base (liftBase)
+import Control.Monad.IO.Class
 
 import Graphics.UI.SDL.Timer
 import Graphics.UI.SDL.Class
@@ -19,7 +19,7 @@ fpsSession = getTicks >>= return . FPSLimit . loop
     loop old limit = do
       let target = old + fromIntegral limit
       curr <- getTicks
-      next <- liftBase $ if target > curr
+      next <- liftIO $ if target > curr
                          then do
                            threadDelay $ 1000 * fromIntegral (target - curr)
                            return target

@@ -4,7 +4,7 @@ module Graphics.UI.SDL.Timer
 
 import Control.Applicative ((<$>))
 import Foreign.C.Types (CUInt(..))
-import Control.Monad.Base (liftBase)
+import Control.Monad.IO.Class
 
 import Graphics.UI.SDL.Timer.Types
 import Graphics.UI.SDL.Class
@@ -13,4 +13,4 @@ import Graphics.UI.SDL.Class
 
 -- This is meant only for relative comparison.
 getTicks :: MonadSDL m => m Ticks
-getTicks = liftBase $ fromIntegral <$> {#call unsafe SDL_GetTicks as ^ #}
+getTicks = liftIO $ fromIntegral <$> {#call unsafe SDL_GetTicks as ^ #}

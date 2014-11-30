@@ -28,8 +28,8 @@ import Foreign.ForeignPtr.Safe (ForeignPtr,
                                 finalizeForeignPtr,
                                 touchForeignPtr)
 import Foreign.Ptr (FunPtr, Ptr)
-import Control.Monad.Base (liftBase)
-import Control.Exception.Lifted (mask_)
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Catch (mask_)
 import Data.Int
 
 import Data.Enum.Num
@@ -50,12 +50,12 @@ class GLAttribute a b | a -> b where
   fromCValue :: a -> CInt -> b
   
 getGLAttribute :: (GLAttribute a b, MonadSDLVideo m) => a -> m b
-getGLAttribute a = liftBase $ (fromCValue a) <$> snd <$> sdlCall "SDL_GL_GetAttribute"
+getGLAttribute a = liftIO $ (fromCValue a) <$> snd <$> sdlCall "SDL_GL_GetAttribute"
                    (sDLGLGetAttribute $ toCAttr a) ((== 0) . fst)
   where {#fun unsafe SDL_GL_GetAttribute as ^ { `CGLAttr', alloca- `CInt' peek*} -> `Int' #}
 
 setGLAttribute :: (GLAttribute a b, MonadSDLVideo m) => a -> b -> m ()
-setGLAttribute a v = liftBase $ sdlCode "SDL_GL_SetAttribute" $
+setGLAttribute a v = liftIO $ sdlCode "SDL_GL_SetAttribute" $
                      sDLGLSetAttribute (toCAttr a) (toCValue a v)
 -- TODO: Remove "id" after issue #83 is resolved in c2hs
   where {#fun unsafe SDL_GL_SetAttribute as ^ { `CGLAttr', id `CInt' } -> `Int' #}
@@ -133,7 +133,7 @@ foreign import ccall unsafe "SDL2/SDL_video.h &SDL_GL_DeleteContext"
   pDeleteContext :: FunPtr (Ptr () -> IO ())
 
 createGLContext :: MonadSDLVideo m => GLWindow -> m GLContext
-createGLContext ww@(GLWindow w) = liftBase $ mask_ $ do
+createGLContext ww@(GLWindow w) = liftIO $ mask_ $ do
   p <- sdlObject "SDL_GL_CreateContext" id $ sDLGLCreateContext w
   addForeignPtrFinalizer pDeleteContext p
   return $ GLContext ww p
@@ -142,7 +142,7 @@ createGLContext ww@(GLWindow w) = liftBase $ mask_ $ do
          { `CWindow' } -> `CGLContext' #}
   
 freeGLContext :: MonadSDLVideo m => GLContext -> m ()
-freeGLContext (GLContext (GLWindow (CWindow wp)) p) = liftBase $ do
+freeGLContext (GLContext (GLWindow (CWindow wp)) p) = liftIO $ do
   finalizeForeignPtr p
   -- This guarantees that window will be finalized no earlier than context.
   -- TODO: CHECK THIS! Notes in ForeignPtr documentation point that this may not work.
@@ -153,17 +153,17 @@ glContextWindow (GLContext w _) = w
 
 glSetCurrent :: MonadSDLVideo m => GLContext -> m ()
 glSetCurrent (GLContext (GLWindow w) p) =
-  liftBase $ sdlCode "SDL_GL_MakeCurrent" $ sDLGLMakeCurrent w p
+  liftIO $ sdlCode "SDL_GL_MakeCurrent" $ sDLGLMakeCurrent w p
 
   where {#fun unsafe SDL_GL_MakeCurrent as ^
          { `CWindow', `CGLContext' } -> `Int' #}
 
 glSwap :: MonadSDLVideo m => GLWindow -> m ()
-glSwap (GLWindow w) = liftBase $ sDLGLSwapWindow w
+glSwap (GLWindow w) = liftIO $ sDLGLSwapWindow w
   where {#fun SDL_GL_SwapWindow as ^ { `CWindow' } -> `()' #}
 
 glGetDrawableSize :: MonadSDLVideo m => GLWindow -> m Size
-glGetDrawableSize (GLWindow w) = liftBase $ do
+glGetDrawableSize (GLWindow w) = liftIO $ do
   (CInt x, CInt y) <- sDLGLGetDrawableSize w
   return $ P x y
   

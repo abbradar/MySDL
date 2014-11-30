@@ -6,13 +6,13 @@ module Graphics.UI.SDL.Video.Mouse
        , getRelativeMouseState
        ) where
 
-import Control.Monad.Base (liftBase)
 import Foreign.Marshal.Alloc (alloca)
 import Foreign.Storable (peek)
 import Foreign.C.Types (CInt(..), CUInt(..))
 import Foreign.Ptr (Ptr)
 import Data.Int
 import Data.Word
+import Control.Monad.IO.Class
 
 import Graphics.UI.SDL.Types
 import Graphics.UI.SDL.Class
@@ -23,7 +23,7 @@ import Graphics.UI.SDL.Video.Internal.Mouse
 type MousePosition = Point Int32
 
 getMouseState' :: MonadSDLVideo m => IO (Word32, CInt, CInt) -> m (MousePosition, MouseButtonState)
-getMouseState' call = liftBase $ do
+getMouseState' call = liftIO $ do
   (f, (CInt x), (CInt y)) <- call
   return (P x y, mmaskToButtons f)
 
