@@ -1,9 +1,7 @@
 1. Re-do module exportation so that parent modules will include all
    necessary things from children modules.
 2. Rewrite comments to use Haddock format.
-3. Move Logger to separate monad.
-4. .x-format parser.
-5. BufferObjects wrappers (with explicit types, assigned Vectors for arrays etc).
-6. Bindings to SDL_* libraries.
-7. Storable-point, triangle, line and such.
-8. Overhaul Joystick and Controller API (don't really get it now, should try to actually use it).
+3. Bindings to SDL_* libraries.
+4. Audio support.
+5. 2D surfaces?
+6. Overhaul Joystick and Controller API (don't really get it now, should try to actually use it).
