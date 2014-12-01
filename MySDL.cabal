@@ -2,7 +2,7 @@
 -- see http://haskell.org/cabal/users-guide/
 
 name:                MySDL
-version:             0.1.0.4
+version:             0.1.1.0
 -- synopsis:            
 -- description:         
 license:             BSD3
@@ -56,10 +56,13 @@ library
                        Graphics.UI.SDL.Video.Internal.Mouse
                        Graphics.UI.SDL.Video.Internal.SysWM
                        Graphics.UI.SDL.Video.Internal.Surface
+                       Graphics.UI.SDL.Video.Internal.GLContextFlag
                        Graphics.UI.SDL.Events.Internal.Types
 
                        Data.Enum.Num
                        Data.Text.Foreign.Extra
+
+                       Language.Haskell.TH.SumList
 
   default-extensions:  LambdaCase
                      , RankNTypes
@@ -92,6 +95,8 @@ library
                      , netwire
                        -- Lens
                      , lens
+                       -- Utils
+                     , template-haskell
   pkgconfig-depends:   sdl2
   hs-source-dirs:      src
   include-dirs:        cbits

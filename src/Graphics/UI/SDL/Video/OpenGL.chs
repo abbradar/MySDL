@@ -1,10 +1,13 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.UI.SDL.Video.OpenGL
        ( GLAttribute
        , getGLAttribute
        , setGLAttribute
        , GLAttrInt(..)
+       , GLAttrContextFlags(..)
+       , GLContextFlag(..)
        , GLAttrProfile(..)
        , GLProfile(..)
        , GLContext
@@ -31,12 +34,15 @@ import Foreign.Ptr (FunPtr, Ptr)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Catch (mask_)
 import Data.Int
+import Data.Bits
 
+import Language.Haskell.TH.SumList
 import Data.Enum.Num
 import Graphics.UI.SDL.Types
 import Graphics.UI.SDL.Internal.Prim
 import Graphics.UI.SDL.Video.Monad
 import Graphics.UI.SDL.Video.Window
+import Graphics.UI.SDL.Video.Internal.GLContextFlag
 
 {#import Graphics.UI.SDL.Video.Internal.Window #}
 
@@ -96,6 +102,16 @@ instance GLAttribute GLAttrInt Int32 where
   toCAttr MultiSampleSamples = SdlGlMultisamplesamples
   toCAttr ContextMinorVersion = SdlGlContextMinorVersion
   toCAttr ContextMajorVersion = SdlGlContextMajorVersion
+
+data GLAttrContextFlags = ContextFlags
+                        deriving (Show, Eq)
+
+instance GLAttribute GLAttrContextFlags [GLContextFlag] where
+  toCValue _ = foldr1 (.|.) . map fromEnum'
+  fromCValue _ val = filter (\m -> val .&. fromEnum' m /= 0) flags
+    where flags = $(makeSumList ''GLContextFlag)
+
+  toCAttr ContextFlags = SdlGlContextFlags
 
 data GLAttrProfile = ContextProfile
                    deriving (Show, Eq)
