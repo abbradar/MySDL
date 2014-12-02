@@ -1,3 +1,7 @@
+{-|
+Description: SDL video subsystem monad transformer.
+-}
+
 module Graphics.UI.SDL.Video.Monad
        ( SDLVideoT
        , MonadSDLVideo
@@ -11,9 +15,9 @@ import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Catch
 
 import Graphics.UI.SDL.Internal.Prim
-import Graphics.UI.SDL.Class
+import Graphics.UI.SDL.Internal.Class
 
--- SDL Video monad transformer
+-- | SDL video subsystem monad transformer.
 newtype SDLVideoT m a = SDLVideoT { runSDLVideoT :: m a }
               deriving ( Functor, Applicative, Monad
                        , MonadFix, MonadIO, MonadThrow
@@ -28,5 +32,6 @@ instance MonadTrans SDLVideoT where
 
 instance (MonadSDLTimer m, MonadSDLEvents m) => MonadSDLVideo (SDLVideoT m) where
 
+-- | Run with initialized SDL video subsystem.
 withSDLVideo :: (MonadSDLEvents m, MonadSDLTimer m) => SDLVideoT m a -> m a
 withSDLVideo = withSubSystem Video . runSDLVideoT

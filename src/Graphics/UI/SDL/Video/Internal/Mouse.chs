@@ -28,6 +28,7 @@ import Data.Enum.Num
                            , SDL_BUTTON_X2 as MouseX2
                            } #}
 
+-- | Mouse button (enumerated from zero) in range [0..32).
 newtype MouseButton = MouseButton Word8
                     deriving (Eq, Show, Ord)
 
@@ -41,18 +42,23 @@ instance Bounded MouseButton where
   minBound = MouseButton 0
   maxBound = MouseButton 31
 
+-- | Left mouse button.
 mouseLeft :: MouseButton
 mouseLeft = MouseButton $ fromEnum' MouseLeft
 
+-- | Middle mouse button.
 mouseMiddle :: MouseButton
 mouseMiddle = MouseButton $ fromEnum' MouseMiddle
 
+-- | Right mouse button.
 mouseRight :: MouseButton
 mouseRight = MouseButton $ fromEnum' MouseRight
 
+-- | X1 mouse button.
 mouseX1 :: MouseButton
 mouseX1 = MouseButton $ fromEnum' MouseX1
 
+-- | X2 mouse button.
 mouseX2 :: MouseButton
 mouseX2 = MouseButton $ fromEnum' MouseX2
 

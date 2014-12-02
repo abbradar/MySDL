@@ -1,3 +1,7 @@
+{-|
+Description: SDL events subsystem monad transformer.
+-}
+
 module Graphics.UI.SDL.Events.Monad
        ( SDLEventsT
        , MonadSDLEvents
@@ -11,9 +15,9 @@ import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Catch
 
 import Graphics.UI.SDL.Internal.Prim
-import Graphics.UI.SDL.Class
+import Graphics.UI.SDL.Internal.Class
 
--- SDL Events monad transformer
+-- | SDL events subsystem monad transformer.
 newtype SDLEventsT m a = SDLEventsT { runSDLEventsT :: m a }
               deriving ( Functor, Applicative, Monad
                        , MonadFix, MonadIO, MonadThrow
@@ -28,5 +32,6 @@ instance MonadTrans SDLEventsT where
 
 instance MonadSDL m => MonadSDLEvents (SDLEventsT m) where
 
+-- | Run with initialized SDL events subsystem.
 withSDLEvents :: MonadSDL m => SDLEventsT m a -> m a
 withSDLEvents = withSubSystem Events . runSDLEventsT

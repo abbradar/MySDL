@@ -1,3 +1,7 @@
+{-|
+Description: SDL timer subsystem monad transformer.
+-}
+
 module Graphics.UI.SDL.Timer.Monad
        ( SDLTimerT
        , MonadSDLTimer
@@ -11,9 +15,9 @@ import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Catch
 
 import Graphics.UI.SDL.Internal.Prim
-import Graphics.UI.SDL.Class
+import Graphics.UI.SDL.Internal.Class
 
--- SDL Timer monad transformer
+-- | SDL timer subsystem monad transformer.
 newtype SDLTimerT m a = SDLTimerT { runSDLTimerT :: m a }
               deriving ( Functor, Applicative, Monad
                        , MonadFix, MonadIO, MonadThrow
@@ -28,5 +32,6 @@ instance MonadTrans SDLTimerT where
 
 instance MonadSDL m => MonadSDLTimer (SDLTimerT m) where
 
+-- | Run with initialized SDL timer subsystem.
 withSDLTimer :: MonadSDL m => SDLTimerT m a -> m a
 withSDLTimer = withSubSystem Timer . runSDLTimerT

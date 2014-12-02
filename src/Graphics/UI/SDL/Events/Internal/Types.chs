@@ -171,16 +171,16 @@ cjoyToEvent t e = Just <$> do
     SdlJoyhatmotion -> do
       hat <- {#get SDL_JoyHatEvent->hat #} e
       v' <- {#get SDL_JoyHatEvent->value #} e
-      let value = uncurry JoyHat $ case toEnum' v' of
-            CCentered -> (XCenter, YCenter)
-            CUp -> (XCenter, North)
-            CRight -> (East, YCenter)
-            CDown -> (XCenter, South)
-            CLeft -> (West, YCenter)
-            CRightUp -> (East, North)
-            CRightDown -> (East, South)
-            CLeftUp -> (West, North)
-            CLeftDown -> (West, South)
+      let value = uncurry P $ case toEnum' v' of
+            CCentered -> (0, 0)
+            CUp -> (1, 0)
+            CRight -> (0, 1)
+            CDown -> (-1, 0)
+            CLeft -> (0, -1)
+            CRightUp -> (1, 1)
+            CRightDown -> (-1, 1)
+            CLeftUp -> (1, -1)
+            CLeftDown -> (-1, -1)
 
       return $ Just $ Hat hat value
     SdlJoybuttondown -> joybtn Pressed
@@ -219,12 +219,12 @@ ctouchToEvent t e = Just <$> do
       CFloat theta <- {#get SDL_MultiGestureEvent->dTheta #} e
       CFloat dist <- {#get SDL_MultiGestureEvent->dDist #} e
       tgpos <- getVec fromCFloat {#get SDL_MultiGestureEvent->x #} {#get SDL_MultiGestureEvent->y #} e
-      CUShort gfingers <- {#get SDL_MultiGestureEvent->numFingers #} e
+      gfingers <- fromIntegral <$> {#get SDL_MultiGestureEvent->numFingers #} e
       
       return $ Just $ Gesture TouchGestureEvent { .. }
     SdlDollargesture -> do
       gesture <- {#get SDL_DollarGestureEvent->gestureId #} e
-      CUInt dfingers <- {#get SDL_DollarGestureEvent->numFingers #} e
+      dfingers <- fromIntegral <$> {#get SDL_DollarGestureEvent->numFingers #} e
       gerror <- fromCFloat <$> {#get SDL_DollarGestureEvent->error #} e
       tdpos <- getVec fromCFloat {#get SDL_DollarGestureEvent->x #} {#get SDL_DollarGestureEvent->y #} e
 
@@ -263,7 +263,7 @@ csyswmToEvent e = do
   return $ SysWM wm
 
 -- For complete safety from memory leaks, this should be called in masked environment.
-ceventToEvent :: CEvent -> IO (Maybe Event)
+ceventToEvent :: CEvent -> IO (Maybe SDLEvent)
 ceventToEvent ev = do
   ts <- fromIntegral <$> {#get SDL_CommonEvent->timestamp #} ev
   d <- toEnum' <$> {#get SDL_CommonEvent->type #} ev >>= \case
@@ -276,4 +276,4 @@ ceventToEvent ev = do
          , ctouchToEvent
          ]
 
-  return $ fmap (Event ts) d
+  return $ fmap (SDLEvent ts) d

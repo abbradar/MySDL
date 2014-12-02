@@ -1,3 +1,8 @@
+{-|
+Description: High-level SDL state.
+
+Provides SDL state which can be advanced given recent queue of events.
+-}
 module FRP.Netwire.SDL.State
        ( HasSDLState(..)
        , State
@@ -14,17 +19,16 @@ import Control.Lens
 import Data.Maybe (fromJust)
 import Control.Wire.Session (Timed(..))
 
+import Graphics.UI.SDL
 import Control.Lens.Instances ()
 import FRP.Netwire.SDL.Types
-import Graphics.UI.SDL.Class
-import Graphics.UI.SDL.Events.Types
-import Graphics.UI.SDL.Video.Mouse
-import Graphics.UI.SDL.Video.Window
-import Graphics.UI.SDL.Video.Keyboard.Types
 
+-- | Instance to help construct user state for Netwire which
+--   includes SDL state and then use provided wires with it.
 class HasSDLState a where
   stateData :: a -> StateData
 
+-- | Wrapper over StateData to provide 'mempty'.
 newtype State = State (Last StateData)
               deriving (Show, Monoid)
 
@@ -41,6 +45,10 @@ instance HasSDLState a => HasSDLState (a, b) where
 instance HasSDLState a => HasSDLState (Timed t a) where
   stateData (Timed _ a) = stateData a
 
+-- | Advance an SDL state.
+--   During advancement it would query all necessary data to keep the state
+--   consistent and up to date, given that all events that were received by
+--   SDL were fed into it.
 nextState :: forall m. MonadSDLVideo m => State -> [EventData] -> m State
 nextState (stateData -> s0) es = State <$> Last <$> Just <$> foldM (flip upd) s0 { _rawEvents = es } es
   where upd :: EventData -> StateData -> m StateData

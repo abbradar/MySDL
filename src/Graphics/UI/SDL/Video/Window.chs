@@ -1,10 +1,13 @@
+{-|
+Description: SDL window handling.
+-}
+
 module Graphics.UI.SDL.Video.Window
        ( Window
        , GLWindow
        , SomeWindow
        , SDLWindow(toSomeWindow)
        , PositionHint(..)
-       , PositionHints
        , WindowFlags(..)
        , createWindow
        , freeWindow
@@ -15,7 +18,6 @@ module Graphics.UI.SDL.Video.Window
        , getWindowPosition
        , getWindowSize
        , setWindowSize
-       , unsafeSetWindowSize
        ) where
 
 import Control.Monad
@@ -59,17 +61,16 @@ foreign import ccall unsafe "SDL2/SDL_video.h &SDL_DestroyWindow"
                            , SDL_WINDOWPOS_UNDEFINED as Undefined'
                            } #}
 
+-- | Window position hint.
 data PositionHint = Abs !Int32
                   | Centered
-                  | Undefined
+                  | NoHint
                 deriving (Show, Eq)
 
 fromPositionHint :: PositionHint -> CInt
 fromPositionHint (Abs x) = CInt x
 fromPositionHint Centered = fromEnum' Centered'
-fromPositionHint Undefined = fromEnum' Undefined'
-
-type PositionHints = Point PositionHint
+fromPositionHint NoHint = fromEnum' Undefined'
 
 {#enum SDL_WindowFlags as WindowFlags {underscoreToCase} deriving (Eq, Show, Bounded) #}
 
@@ -79,7 +80,8 @@ windows :: MVar (Map WindowID (Weak SomeWindow))
 {-# NOINLINE windows #-}
 windows = unsafePerformIO $ newMVar Map.empty
 
-createWindow :: MonadSDLVideo m => ByteString -> PositionHints -> Size -> [WindowFlags] -> m SomeWindow
+-- | Create a window.
+createWindow :: MonadSDLVideo m => ByteString -> Point PositionHint -> Size -> [WindowFlags] -> m SomeWindow
 createWindow name (P x y) (P w h) fs = do
   cw <- liftIO $ mask_ $ do
     let f = foldr ((.|.) . fromEnum') 0 fs
@@ -100,9 +102,11 @@ createWindow name (P x y) (P w h) fs = do
          , `Int32', `Int32'
          , `Word32' } -> `CWindow' #}
 
+-- | Destroy and free a window.
 freeWindow :: (MonadSDLVideo m, SDLWindow a) => a -> m ()
 freeWindow (toCWindow -> CWindow a) = liftIO $ finalizeForeignPtr a
 
+-- | Get window flags from a given window.
 windowFlags :: (MonadSDLVideo m, SDLWindow a) => a -> m [WindowFlags]
 windowFlags (toCWindow -> w) = do
   n <- liftIO $ sDLGetWindowFlags w
@@ -111,14 +115,17 @@ windowFlags (toCWindow -> w) = do
   where {#fun unsafe SDL_GetWindowFlags as ^
          { `CWindow' } -> `Int' #}
 
+-- | Get internal window ID from a window.
 getWindowID :: (MonadSDLVideo m, SDLWindow a) => a -> m WindowID
 getWindowID (toCWindow -> w) = liftIO $ WindowID <$> sDLGetWindowID w
   where {#fun unsafe SDL_GetWindowID as ^
          { `CWindow' } -> `CUInt' id #}
 
+-- | Try to restore a window from an internal ID. A window might be already destroyed.
 getWindowFromID :: MonadSDLVideo m => WindowID -> m (Maybe SomeWindow)
 getWindowFromID i = liftIO $ readMVar windows >>= maybe (return Nothing) deRefWeak . Map.lookup i
 
+-- | Get a window position.
 getWindowPosition :: (MonadSDLVideo m, SDLWindow a) => a -> m PosPoint
 getWindowPosition (toCWindow -> w) = liftIO $ do
   (CInt x, CInt y) <- sDLGetWindowPosition w
@@ -130,6 +137,7 @@ getWindowPosition (toCWindow -> w) = liftIO $ do
          , alloca- `CInt' peek*
          } -> `()' #}
 
+-- | Get a window size.
 getWindowSize :: (MonadSDLVideo m, SDLWindow a) => a -> m Size
 getWindowSize (toCWindow -> w) = liftIO $ do
   (CInt x, CInt y) <- sDLGetWindowSize w
@@ -141,16 +149,8 @@ getWindowSize (toCWindow -> w) = liftIO $ do
          , alloca- `CInt' peek*
          } -> `()' #}
 
--- SDL_SetWindowSize calls SDL_PushEvent which can callback into Haskell code.
-setWindowSize' :: (MonadSDLVideo m, SDLWindow a) => (CWindow -> Int32 -> Int32 -> IO ()) -> a -> Size -> m ()
-setWindowSize' call (toCWindow -> win) (P w h) = liftIO $ call win w h
-
+-- | Set a window size.
 setWindowSize :: (MonadSDLVideo m, SDLWindow a) => a -> Size -> m ()
-setWindowSize = setWindowSize' sDLSetWindowSize
+setWindowSize (toCWindow -> win) (P w h) = liftIO $ sDLSetWindowSize win w h
   where {#fun SDL_SetWindowSize as ^
-         { `CWindow', `Int32', `Int32' } -> `()' #}
-
-unsafeSetWindowSize :: (MonadSDLVideo m, SDLWindow a) => a -> Size -> m ()
-unsafeSetWindowSize = setWindowSize' sDLSetWindowSizeUnsafe
-  where {#fun unsafe SDL_SetWindowSize as sDLSetWindowSizeUnsafe
          { `CWindow', `Int32', `Int32' } -> `()' #}

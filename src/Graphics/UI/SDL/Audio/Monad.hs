@@ -1,3 +1,7 @@
+{-|
+Description: SDL audio subsystem monad transformer.
+-}
+
 module Graphics.UI.SDL.Audio.Monad
        ( SDLAudioT
        , MonadSDLAudio
@@ -11,9 +15,9 @@ import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Catch
 
 import Graphics.UI.SDL.Internal.Prim
-import Graphics.UI.SDL.Class
+import Graphics.UI.SDL.Internal.Class
 
--- SDL Audio monad transformer
+-- | SDL audio subsystem monad transformer.
 newtype SDLAudioT m a = SDLAudioT { runSDLAudioT :: m a }
               deriving ( Functor, Applicative, Monad
                        , MonadFix, MonadIO, MonadThrow
@@ -28,5 +32,6 @@ instance MonadTrans SDLAudioT where
 
 instance MonadSDL m => MonadSDLAudio (SDLAudioT m) where
 
+-- | Run with initialized SDL audio subsystem.
 withSDLAudio :: MonadSDL m => SDLAudioT m a -> m a
 withSDLAudio = withSubSystem Audio . runSDLAudioT

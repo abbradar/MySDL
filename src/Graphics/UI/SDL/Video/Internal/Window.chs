@@ -9,10 +9,14 @@ import Foreign.C.Types (CUInt)
 
 {#pointer *SDL_Window as CWindow foreign newtype #}
 
+-- | A window without direct OpenGL acceleration (SDL may implement acceleration for 2D surfaces, however).
 newtype Window = Window CWindow
+-- | A window accelerated with OpenGL.
 newtype GLWindow = GLWindow CWindow
+-- | Generic window.
 type SomeWindow = Either Window GLWindow
 
+-- | Class of SDL windows.
 class SDLWindow a where
   toCWindow :: a -> CWindow
   toSomeWindow :: a -> SomeWindow
@@ -30,5 +34,6 @@ instance SDLWindow SomeWindow where
   toCWindow (Right a) = toCWindow a
   toSomeWindow = id
 
+-- | Internal SDL window ID.
 newtype WindowID = WindowID CUInt
                  deriving (Eq, Show, Ord)

@@ -1,3 +1,7 @@
+{-|
+Description: Platform-specific window management.
+-}
+
 {-# OPTIONS_GHC -fno-warn-overlapping-patterns #-}
 
 module Graphics.UI.SDL.Video.WMInfo
@@ -30,6 +34,9 @@ typedef struct SDL_SysWMinfo SDL_SysWMinfo_t;
 #endc
 
 -- TODO: Get more info
+-- | Platform-specific information about a window.
+--
+--   This is incomplete and for now allows only to find out current platform.
 data WMInfo = Windows
             | X11
             | DirectFB
@@ -43,6 +50,7 @@ data WMInfo = Windows
               
 --{#pointer *SDL_SysWMinfo_t as CWMInfo #}
 
+-- | Try to get platform-specific information for a window.
 windowWMInfo :: SDLWindow a => a -> IO (Maybe WMInfo)
 windowWMInfo (toCWindow -> CWindow wp) =
   allocaBytesAligned {#sizeof SDL_SysWMinfo_t #} {#alignof SDL_SysWMinfo_t #} $

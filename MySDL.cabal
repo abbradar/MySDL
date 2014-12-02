@@ -2,9 +2,9 @@
 -- see http://haskell.org/cabal/users-guide/
 
 name:                MySDL
-version:             0.1.1.0
+version:             0.2.0.0
 -- synopsis:            
--- description:         
+description:         High-level SDL bindings with FRP-based events handling.
 license:             BSD3
 author:              Nikolay Amiantov
 maintainer:          nikoamia@gmail.com
@@ -17,7 +17,6 @@ cabal-version:       >=1.10
 library
   exposed-modules:     Graphics.UI.SDL
                        Graphics.UI.SDL.Types
-                       Graphics.UI.SDL.Class
                        Graphics.UI.SDL.Monad
                        Graphics.UI.SDL.Video
                        Graphics.UI.SDL.Video.Monad
@@ -34,20 +33,19 @@ library
                        Graphics.UI.SDL.Events
                        Graphics.UI.SDL.Events.Monad
                        Graphics.UI.SDL.Events.Types
+                       Graphics.UI.SDL.Events.Queue
                        Graphics.UI.SDL.Timer
                        Graphics.UI.SDL.Timer.Monad
-                       Graphics.UI.SDL.Timer.Types
+                       Graphics.UI.SDL.Timer.Ticks
                        Graphics.UI.SDL.Version
                        Graphics.UI.SDL.Utils.Framerate
                        
-                       FRP.Netwire.Extra
                        FRP.Netwire.SDL
                        FRP.Netwire.SDL.State
                        FRP.Netwire.SDL.Types
                        FRP.Netwire.SDL.Wires
-
-                       Control.Lens.Instances
-                       Control.Lens.Extra
+                       FRP.Netwire.SDL.Lens
+                       FRP.Netwire.SDL.Session
 
   other-modules:       Graphics.UI.SDL.Internal.Prim
                        Graphics.UI.SDL.Internal.Class
@@ -56,13 +54,15 @@ library
                        Graphics.UI.SDL.Video.Internal.Mouse
                        Graphics.UI.SDL.Video.Internal.SysWM
                        Graphics.UI.SDL.Video.Internal.Surface
-                       Graphics.UI.SDL.Video.Internal.GLContextFlag
                        Graphics.UI.SDL.Events.Internal.Types
 
                        Data.Enum.Num
                        Data.Text.Foreign.Extra
 
-                       Language.Haskell.TH.SumList
+                       Control.Lens.Instances
+                       Control.Lens.Extra
+
+                       Control.Wire.Extra
 
   default-extensions:  LambdaCase
                      , RankNTypes
@@ -78,6 +78,7 @@ library
                      , FlexibleContexts
                      , StandaloneDeriving
                      , FunctionalDependencies
+                     , DeriveDataTypeable
 
   other-extensions:    TemplateHaskell
 
@@ -95,8 +96,6 @@ library
                      , netwire
                        -- Lens
                      , lens
-                       -- Utils
-                     , template-haskell
   pkgconfig-depends:   sdl2
   hs-source-dirs:      src
   include-dirs:        cbits

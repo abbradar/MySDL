@@ -1,5 +1,6 @@
 module Graphics.UI.SDL.Internal.Prim
        ( SDLBool(..)
+       , SDLError(..)
        , sdlCall
        , sdlCode
        , sdlBool
@@ -10,6 +11,7 @@ module Graphics.UI.SDL.Internal.Prim
        , freeSDL
        ) where
 
+import Data.Typeable
 import Control.Monad
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -24,21 +26,24 @@ import Foreign.C.String (peekCString)
 import Control.Monad.IO.Class (MonadIO(..))
 import Text.Printf (printf)
 
-import Graphics.UI.SDL.Class
+import Graphics.UI.SDL.Internal.Class
 
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
 {#enum SDL_bool as SDLBool {underscoreToCase} deriving (Eq, Show) #}
 
+data SDLError = SDLError String String
+              deriving (Show, Typeable)
+
+instance Exception SDLError
+
 sdlCall :: String -> IO a -> (a -> Bool) -> IO a
 sdlCall str call test = do
   r <- call
   unless (test r) $ do
-    -- Potential race condition (see haskell-cafe discussion)
     err <- {#call unsafe SDL_GetError as ^#} >>= peekCString
-    --{#call unsafe SDL_ClearError as ^ #}
-    fail $ str ++ ": " ++ err
+    throwM $ SDLError str err
   return r
 
 sdlCode :: String -> IO Int -> IO ()

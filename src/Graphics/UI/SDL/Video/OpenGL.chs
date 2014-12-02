@@ -1,5 +1,8 @@
+{-|
+Description: OpenGL-related functions.
+-}
+
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Graphics.UI.SDL.Video.OpenGL
        ( GLAttribute
@@ -36,13 +39,11 @@ import Control.Monad.Catch (mask_)
 import Data.Int
 import Data.Bits
 
-import Language.Haskell.TH.SumList
 import Data.Enum.Num
 import Graphics.UI.SDL.Types
 import Graphics.UI.SDL.Internal.Prim
 import Graphics.UI.SDL.Video.Monad
 import Graphics.UI.SDL.Video.Window
-import Graphics.UI.SDL.Video.Internal.GLContextFlag
 
 {#import Graphics.UI.SDL.Video.Internal.Window #}
 
@@ -50,22 +51,26 @@ import Graphics.UI.SDL.Video.Internal.GLContextFlag
 
 {#enum SDL_GLattr as CGLAttr {underscoreToCase} #}
 
+-- | OpenGL attribute class. Each attribute type @a@ has its data type @b@.
 class GLAttribute a b | a -> b where
   toCAttr :: a -> CGLAttr
   toCValue :: a -> b -> CInt
   fromCValue :: a -> CInt -> b
-  
+
+-- | Get current value of an OpenGL attribute.
 getGLAttribute :: (GLAttribute a b, MonadSDLVideo m) => a -> m b
 getGLAttribute a = liftIO $ (fromCValue a) <$> snd <$> sdlCall "SDL_GL_GetAttribute"
                    (sDLGLGetAttribute $ toCAttr a) ((== 0) . fst)
   where {#fun unsafe SDL_GL_GetAttribute as ^ { `CGLAttr', alloca- `CInt' peek*} -> `Int' #}
 
+-- | Sets new value of an OpenGL attribute. This should be done before creating a window.
 setGLAttribute :: (GLAttribute a b, MonadSDLVideo m) => a -> b -> m ()
 setGLAttribute a v = liftIO $ sdlCode "SDL_GL_SetAttribute" $
                      sDLGLSetAttribute (toCAttr a) (toCValue a v)
 -- TODO: Remove "id" after issue #83 is resolved in c2hs
   where {#fun unsafe SDL_GL_SetAttribute as ^ { `CGLAttr', id `CInt' } -> `Int' #}
 
+-- | Integer OpenGL attributes.
 data GLAttrInt = RedSize
                | GreenSize
                | BlueSize
@@ -103,19 +108,24 @@ instance GLAttribute GLAttrInt Int32 where
   toCAttr ContextMinorVersion = SdlGlContextMinorVersion
   toCAttr ContextMajorVersion = SdlGlContextMajorVersion
 
+-- | OpenGL context flags attribute.
 data GLAttrContextFlags = ContextFlags
                         deriving (Show, Eq)
 
+-- | Context flags.
+{#enum SDL_GLcontextFlag as GLContextFlag {underscoreToCase} deriving (Show, Eq, Bounded) #}
+
 instance GLAttribute GLAttrContextFlags [GLContextFlag] where
   toCValue _ = foldr1 (.|.) . map fromEnum'
-  fromCValue _ val = filter (\m -> val .&. fromEnum' m /= 0) flags
-    where flags = $(makeSumList ''GLContextFlag)
+  fromCValue _ val = filter (\m -> val .&. fromEnum' m /= 0) [minBound..maxBound]
 
   toCAttr ContextFlags = SdlGlContextFlags
 
+-- | OpenGL profile attribute.
 data GLAttrProfile = ContextProfile
                    deriving (Show, Eq)
 
+-- | OpenGL profiles.
 {#enum SDL_GLprofile as GLProfile {underscoreToCase} deriving (Show, Eq) #}
 
 instance GLAttribute GLAttrProfile GLProfile where
@@ -124,6 +134,7 @@ instance GLAttribute GLAttrProfile GLProfile where
 
   toCAttr ContextProfile = SdlGlContextProfileMask
 
+-- | OpenGL flag-like attributes.
 data GLAttrBool = DoubleBuffer
                 | Stereo
                 | AcceleratedVisual
@@ -143,11 +154,13 @@ instance GLAttribute GLAttrBool Bool where
 
 {#pointer SDL_GLContext as CGLContext foreign #}
 
+-- | OpenGL context for a window.
 data GLContext = GLContext !GLWindow !CGLContext
 
 foreign import ccall unsafe "SDL2/SDL_video.h &SDL_GL_DeleteContext"
   pDeleteContext :: FunPtr (Ptr () -> IO ())
 
+-- | Create OpenGL context for a given accelerated 'GLWindow'.
 createGLContext :: MonadSDLVideo m => GLWindow -> m GLContext
 createGLContext ww@(GLWindow w) = liftIO $ mask_ $ do
   p <- sdlObject "SDL_GL_CreateContext" id $ sDLGLCreateContext w
@@ -156,7 +169,8 @@ createGLContext ww@(GLWindow w) = liftIO $ mask_ $ do
 
   where {#fun unsafe SDL_GL_CreateContext as ^
          { `CWindow' } -> `CGLContext' #}
-  
+
+-- | Destroy OpenGL context.
 freeGLContext :: MonadSDLVideo m => GLContext -> m ()
 freeGLContext (GLContext (GLWindow (CWindow wp)) p) = liftIO $ do
   finalizeForeignPtr p
@@ -164,9 +178,11 @@ freeGLContext (GLContext (GLWindow (CWindow wp)) p) = liftIO $ do
   -- TODO: CHECK THIS! Notes in ForeignPtr documentation point that this may not work.
   touchForeignPtr wp
 
+-- | Get window for a given context.
 glContextWindow :: GLContext -> GLWindow
 glContextWindow (GLContext w _) = w
 
+-- | Set a context as current (meaning, OpenGL functions will work with it).
 glSetCurrent :: MonadSDLVideo m => GLContext -> m ()
 glSetCurrent (GLContext (GLWindow w) p) =
   liftIO $ sdlCode "SDL_GL_MakeCurrent" $ sDLGLMakeCurrent w p
@@ -174,10 +190,12 @@ glSetCurrent (GLContext (GLWindow w) p) =
   where {#fun unsafe SDL_GL_MakeCurrent as ^
          { `CWindow', `CGLContext' } -> `Int' #}
 
+-- | Swap OpenGL buffers in a 'GLWindow'.
 glSwap :: MonadSDLVideo m => GLWindow -> m ()
 glSwap (GLWindow w) = liftIO $ sDLGLSwapWindow w
   where {#fun SDL_GL_SwapWindow as ^ { `CWindow' } -> `()' #}
 
+-- | Get real drawable area size for a window.
 glGetDrawableSize :: MonadSDLVideo m => GLWindow -> m Size
 glGetDrawableSize (GLWindow w) = liftIO $ do
   (CInt x, CInt y) <- sDLGLGetDrawableSize w
