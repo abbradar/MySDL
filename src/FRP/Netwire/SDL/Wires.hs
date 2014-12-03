@@ -13,7 +13,6 @@ module FRP.Netwire.SDL.Wires
 
 import Prelude hiding ((.))
 import Control.Wire hiding (First, at)
-import Control.Wire.Unsafe.Event (Event(..))
 import Control.Lens
 import Data.Monoid (First)
 
@@ -27,11 +26,13 @@ import FRP.Netwire.SDL.Lens
 sdlOnState :: (HasSDLState s, Monoid s, Monoid e, Monad m) => Getting (First b) StateData b -> Wire s e m a b
 sdlOnState t = mkPure $ \(stateData -> s) _ -> (maybe (Left mempty) Right $ s ^? t, sdlOnState t)
 
--- | Wire which produces netwire 'Event' when there's SDL event which satisfies given 'Traversable'.
-sdlOnEvent :: (HasSDLState s, Monoid s, Monad m) => Getting (First b) EventData b -> Wire s e m a (Event b)
-sdlOnEvent t = mkSF $ \(stateData -> StateData { _rawEvents }) _ ->
-                       ( maybe NoEvent Event $ _rawEvents ^? traversed . t
-                       , sdlOnEvent t)
+-- | Wire which emits an SDL event when it satisfies given 'Traversable'.
+--   We don't use Netwire 'Event' because SDL and our running semantics
+--   guarantee that each time a wire produces a value, it would be an
+--   unique event.
+sdlOnEvent :: (HasSDLState s, Monoid s, Monad m) => Getting (First b) EventData b -> Wire s e m a b
+sdlOnEvent t = mkPure $ \(stateData -> StateData { _rawEvents }) _ ->
+                         ( maybe (Left mempty) Right $ _rawEvents ^? traversed . t, sdlOnEvent t)
 
 -- | Wire which emits while certain key is down in any window.
 whileKey :: (HasSDLState s, Monoid s, Monoid e, Monad m) => KeyState -> KeyCode -> Wire s e m a WindowState
@@ -40,5 +41,5 @@ whileKey s k = sdlOnState $ anyWindowState . (if s == Pressed then hasInside l e
         l = keysPressed . ix k
 
 -- | Wire which produces an event once when key is pressed in any window.
-onKey :: (HasSDLState s, Monoid s, Monad m) => KeyState -> KeyCode -> Wire s e m a (Event KeyboardEvent)
+onKey :: (HasSDLState s, Monoid s, Monad m) => KeyState -> KeyCode -> Wire s e m a KeyboardEvent
 onKey state key = sdlOnEvent $ anyWindow . _Keyboard . eqInside kstate state . eqInside (keySym . keyCode) key
