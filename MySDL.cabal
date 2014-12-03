@@ -79,6 +79,7 @@ library
                      , StandaloneDeriving
                      , FunctionalDependencies
                      , DeriveDataTypeable
+                     , ConstraintKinds
 
   other-extensions:    TemplateHaskell
 
