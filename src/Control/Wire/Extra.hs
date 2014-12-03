@@ -20,3 +20,7 @@ emptyE = mapE $ const ()
 a <!> b = emptyE . a <> emptyE . b
 
 infixl 5 <!>
+
+-- | Try to get output value, if not, emit Nothing.
+tryW :: (Monad m, Monoid e) => Wire s e m a b -> Wire s e m a (Maybe b)
+tryW w = Just <$> w <|> mkConst (Right Nothing)
