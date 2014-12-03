@@ -4,11 +4,13 @@ Description: Helpful wires for dealing with SDL events and state.
 
 module FRP.Netwire.SDL.Wires
        ( -- * Generic wires
-         sdlOnEvent
-       , sdlOnState
+         sdlOnState
+       , sdlOnEvent
+       , sdlOnEvent_
          -- * Keyboard-related
        , whileKey
        , onKey
+       , onKey_
        ) where
 
 import Prelude hiding ((.))
