@@ -23,17 +23,17 @@ import FRP.Netwire.SDL.Types
 import FRP.Netwire.SDL.State
 import FRP.Netwire.SDL.Lens
 
+-- | Wire which emits a state if it satisfies given 'Traversable'.
+sdlOnState :: (HasSDLState s, Monoid s, Monoid e, Monad m) => Getting (First b) StateData b -> Wire s e m a b
+sdlOnState t = mkPure $ \(stateData -> s) _ -> (maybe (Left mempty) Right $ s ^? t, sdlOnState t)
+
 -- | Wire which produces netwire 'Event' when there's SDL event which satisfies given 'Traversable'.
 sdlOnEvent :: (HasSDLState s, Monoid s, Monad m) => Getting (First b) EventData b -> Wire s e m a (Event b)
 sdlOnEvent t = mkSF $ \(stateData -> StateData { _rawEvents }) _ ->
                        ( maybe NoEvent Event $ _rawEvents ^? traversed . t
                        , sdlOnEvent t)
 
--- | Wire which produces an event when current SDL state satisfies given 'Traversable'.
-sdlOnState :: (HasSDLState s, Monoid s, Monoid e, Monad m) => Getting (First b) StateData b -> Wire s e m a b
-sdlOnState t = mkPure $ \(stateData -> s) _ -> (maybe (Left mempty) Right $ s ^? t, sdlOnState t)
-
--- | Wire which produces an event while certain key is down in any window.
+-- | Wire which emits while certain key is down in any window.
 whileKey :: (HasSDLState s, Monoid s, Monoid e, Monad m) => KeyState -> KeyCode -> Wire s e m a WindowState
 whileKey s k = sdlOnState $ anyWindowState . (if s == Pressed then hasInside l else hasn'tInside l)
   where l :: Applicative f => (() -> f ()) -> WindowState -> f WindowState

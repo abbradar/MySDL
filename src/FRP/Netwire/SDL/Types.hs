@@ -40,9 +40,9 @@ data WindowState = WindowState { _keysPressed :: Set KeyCode
                                , _scansPressed :: Set ScanCode
                                , _modsPressed :: BW.BitSet KeyMod
                                , _mouseState :: Map WhichMouse MouseState
-                               , _shown :: Bool
-                               , _pos :: PosPoint
-                               , _size :: Size
+                               , _wshown :: Bool
+                               , _wpos :: PosPoint
+                               , _wsize :: Size
                                , _mouseFocus :: Bool
                                , _kbdFocus :: Bool
                                }

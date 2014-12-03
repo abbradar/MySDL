@@ -6,7 +6,6 @@ module Control.Wire.Extra where
 
 import Prelude hiding ((.))
 import Control.Wire
-import Control.Wire.Unsafe.Event (Event(..))
 
 -- | Create a pure wire on 'Event' from a function.
 mapE :: (a -> b) -> Wire s e m (Event a) (Event b)

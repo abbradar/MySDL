@@ -57,13 +57,13 @@ nextState (stateData -> s0) es = State <$> Last <$> Just <$> foldM (flip upd) s0
                 def = do
                   -- May fail if there are no other references to Window.
                   Just w <- getWindowFromID i
-                  _pos <- getWindowPosition w
-                  _size <- getWindowSize w
+                  _wpos <- getWindowPosition w
+                  _wsize <- getWindowSize w
                   return WindowState { _keysPressed = S.empty
                                      , _scansPressed = S.empty
                                      , _modsPressed = BW.empty
                                      , _mouseState = M.empty
-                                     , _shown = True
+                                     , _wshown = True
                                      , _mouseFocus = False
                                      , _kbdFocus = False
                                      , ..
@@ -80,8 +80,8 @@ nextState (stateData -> s0) es = State <$> Last <$> Just <$> foldM (flip upd) s0
                   (_mousePos, _mousePressed) <- getRelativeMouseState
                   return MouseState { .. }
         winUpd e = return . case e of
-          Moved wpos -> pos .~ wpos
-          SizeChanged wsize -> size .~ wsize
+          Moved wp -> wpos .~ wp
+          SizeChanged ws -> wsize .~ ws
           WinEntered -> mouseFocus .~ True
           WinLeft -> mouseFocus .~ False
           FocusGained -> kbdFocus .~ True
