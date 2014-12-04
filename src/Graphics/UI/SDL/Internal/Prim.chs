@@ -1,5 +1,7 @@
 module Graphics.UI.SDL.Internal.Prim
-       ( SDLBool(..)
+       ( SDLBool
+       , fromSDLBool
+       , toSDLBool
        , SDLError(..)
        , sdlCall
        , sdlCode
@@ -32,6 +34,14 @@ import Graphics.UI.SDL.Internal.Class
 #include <SDL2/SDL.h>
 
 {#enum SDL_bool as SDLBool {underscoreToCase} deriving (Eq, Show) #}
+
+fromSDLBool :: SDLBool -> Bool
+fromSDLBool SdlTrue = True
+fromSDLBool SdlFalse = False
+
+toSDLBool :: Bool -> SDLBool
+toSDLBool True = SdlTrue
+toSDLBool False = SdlFalse
 
 data SDLError = SDLError String String
               deriving (Show, Typeable)

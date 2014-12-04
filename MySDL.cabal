@@ -62,8 +62,6 @@ library
                        Control.Lens.Instances
                        Control.Lens.Extra
 
-                       Control.Wire.Extra
-
   default-extensions:  LambdaCase
                      , RankNTypes
                      , TypeFamilies

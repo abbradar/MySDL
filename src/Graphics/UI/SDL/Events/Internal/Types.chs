@@ -97,29 +97,26 @@ cmouseToEvent :: CEventType -> CEvent -> MaybeT IO WindowEvent
 cmouseToEvent t e = do
   d <- MaybeT $ case t of
     SdlMousemotion -> do
-      mstates <- mmaskToButtons <$> fromCUInt <$> {#get SDL_MouseMotionEvent->state #} e
-      mmpos <- getVec fromCInt {#get SDL_MouseMotionEvent->x #} {#get SDL_MouseMotionEvent->y #} e
-      mrel <- getVec fromCInt {#get SDL_MouseMotionEvent->xrel #} {#get SDL_MouseMotionEvent->yrel #} e
+      _mstates <- mmaskToButtons <$> fromCUInt <$> {#get SDL_MouseMotionEvent->state #} e
+      _mmpos <- getVec fromCInt {#get SDL_MouseMotionEvent->x #} {#get SDL_MouseMotionEvent->y #} e
+      _mrel <- getVec fromCInt {#get SDL_MouseMotionEvent->xrel #} {#get SDL_MouseMotionEvent->yrel #} e
 
       return $ Just $ MMotion MouseMotionEvent { .. }
 
     SdlMousebuttondown -> mousebtn Pressed
     SdlMousebuttonup -> mousebtn Released
-    SdlMousewheel -> do
-      mrel <- getVec fromCInt {#get SDL_MouseWheelEvent->x #} {#get SDL_MouseWheelEvent->y #} e
-      
-      return $ Just $ MWheel mrel
-
+    SdlMousewheel ->
+      Just <$> MWheel <$> getVec fromCInt {#get SDL_MouseWheelEvent->x #} {#get SDL_MouseWheelEvent->y #} e
     _ -> return Nothing
 
   which <- lift $ {#get SDL_MouseButtonEvent->which #} e
 
   return $ Mouse (if which == (-1) then MouseTouch else MouseID which) d
 
-  where mousebtn mstate = do
-          mbutton <- toEnum' <$> {#get SDL_MouseButtonEvent->button #} e
-          (CUChar clicks) <- {#get SDL_MouseButtonEvent->clicks #} e
-          mbpos <- getVec fromCInt {#get SDL_MouseButtonEvent->x #} {#get SDL_MouseButtonEvent->y #} e
+  where mousebtn _mstate = do
+          _mbutton <- toEnum' <$> {#get SDL_MouseButtonEvent->button #} e
+          (CUChar _clicks) <- {#get SDL_MouseButtonEvent->clicks #} e
+          _mbpos <- getVec fromCInt {#get SDL_MouseButtonEvent->x #} {#get SDL_MouseButtonEvent->y #} e
 
           return $ Just $ MButton MouseButtonEvent { .. }
 

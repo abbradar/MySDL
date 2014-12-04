@@ -96,9 +96,9 @@ nextState (stateData -> s0) es = State <$> Last <$> Just <$> foldM (flip upd) s0
                          . (modsPressed .~ _keyMod)
           _ -> id
             
-        mouseUpd (MMotion MouseMotionEvent { .. }) = (mousePos .~ mmpos)
+        mouseUpd (MMotion MouseMotionEvent { .. }) = (mousePos .~ _mmpos)
         mouseUpd (MButton MouseButtonEvent { .. }) =
-          case mstate of
-               Pressed -> (mousePressed.at mbutton ?~ ()) . (mousePos .~ mbpos)
-               Released -> (mousePressed.at mbutton .~ Nothing) . (mousePos .~ mbpos)
+          case _mstate of
+               Pressed -> (mousePressed.at _mbutton ?~ ()) . (mousePos .~ _mbpos)
+               Released -> (mousePressed.at _mbutton .~ Nothing) . (mousePos .~ _mbpos)
         mouseUpd _ = id

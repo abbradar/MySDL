@@ -15,3 +15,7 @@ import FRP.Netwire.SDL.Types
 anyWindowState :: (Indexable Int p, Applicative f) =>
                   p WindowState (f WindowState) -> StateData -> f StateData
 anyWindowState = windowState . traversed
+
+anyMouseState :: (Indexable Int p, Applicative f) =>
+                  p MouseState (f MouseState) -> WindowState -> f WindowState
+anyMouseState = mouseState . traversed

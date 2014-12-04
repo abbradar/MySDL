@@ -172,7 +172,7 @@ createGLContext ww@(GLWindow w) = liftIO $ mask_ $ do
 
 -- | Destroy OpenGL context.
 freeGLContext :: MonadSDLVideo m => GLContext -> m ()
-freeGLContext (GLContext (GLWindow (CWindow wp)) p) = liftIO $ do
+freeGLContext (GLContext (GLWindow wp) p) = liftIO $ do
   finalizeForeignPtr p
   -- This guarantees that window will be finalized no earlier than context.
   -- TODO: CHECK THIS! Notes in ForeignPtr documentation point that this may not work.

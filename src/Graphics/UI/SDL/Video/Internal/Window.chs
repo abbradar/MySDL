@@ -1,13 +1,11 @@
 module Graphics.UI.SDL.Video.Internal.Window where
 
-import Foreign.ForeignPtr.Safe (ForeignPtr,
-                                withForeignPtr)
-import Foreign.Ptr (Ptr)
+import Foreign.ForeignPtr.Safe (ForeignPtr)
 import Foreign.C.Types (CUInt)
 
 #include <SDL2/SDL_video.h>
 
-{#pointer *SDL_Window as CWindow foreign newtype #}
+{#pointer *SDL_Window as CWindow foreign #}
 
 -- | A window without direct OpenGL acceleration (SDL may implement acceleration for 2D surfaces, however).
 newtype Window = Window CWindow

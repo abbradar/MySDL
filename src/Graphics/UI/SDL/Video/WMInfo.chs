@@ -52,7 +52,7 @@ data WMInfo = Windows
 
 -- | Try to get platform-specific information for a window.
 windowWMInfo :: SDLWindow a => a -> IO (Maybe WMInfo)
-windowWMInfo (toCWindow -> CWindow wp) =
+windowWMInfo (toCWindow -> wp) =
   allocaBytesAligned {#sizeof SDL_SysWMinfo_t #} {#alignof SDL_SysWMinfo_t #} $
   \p -> withForeignPtr wp $ \w -> do
     let v = p `plusPtr` {#offsetof SDL_SysWMinfo->version #}

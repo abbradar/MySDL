@@ -10,7 +10,7 @@ module Graphics.UI.SDL.Video.Surface
 
 import Control.Monad
 import Foreign.C.Types (CInt(..))
-import Foreign.ForeignPtr.Safe (newForeignPtr_)
+import Foreign.ForeignPtr
 import Foreign.Ptr (Ptr)
 import Control.Monad.IO.Class
 

@@ -80,9 +80,9 @@ makePrisms ''TextEvent
 -- [@mstates@] Pressed buttons.
 -- [@mrel@] Mouse motion relative to previous event.
 -- [@mmpos@] Mouse position relative to window.
-data MouseMotionEvent = MouseMotionEvent { mstates :: MouseButtonState -- ORF, this is needed rarely and computed slowly
-                                         , mrel :: !PosPoint -- ORF
-                                         , mmpos :: !PosPoint -- ORF
+data MouseMotionEvent = MouseMotionEvent { _mstates :: MouseButtonState -- ORF, this is needed rarely and computed slowly
+                                         , _mrel :: !PosPoint -- ORF
+                                         , _mmpos :: !PosPoint -- ORF
                                          }
                       deriving (Eq, Show)
 
@@ -94,10 +94,10 @@ makeLenses ''MouseMotionEvent
 -- [@mstate@] Button state.
 -- [@clicks@] Number of successive fast clicks.
 -- [@mbpos@] Mouse position relative to window.
-data MouseButtonEvent = MouseButtonEvent { mbutton :: !MouseButton -- ORF
-                                         , mstate :: !KeyState -- ORF
-                                         , clicks :: !Word8
-                                         , mbpos :: !PosPoint -- ORF
+data MouseButtonEvent = MouseButtonEvent { _mbutton :: !MouseButton -- ORF
+                                         , _mstate :: !KeyState -- ORF
+                                         , _clicks :: !Word8
+                                         , _mbpos :: !PosPoint -- ORF
                                          }
                       deriving (Eq, Show)
 
@@ -234,6 +234,9 @@ makePrisms ''EventData
 
 anyWindow :: Applicative f => (WindowEvent -> f WindowEvent) -> EventData -> f EventData
 anyWindow = _Window . _2
+
+anyMouse :: Applicative f => (MouseEvent -> f MouseEvent) -> WindowEvent -> f WindowEvent
+anyMouse = _Mouse . _2
 
 -- | SDL incoming event.
 data SDLEvent = SDLEvent !Ticks !EventData

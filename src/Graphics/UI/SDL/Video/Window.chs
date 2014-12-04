@@ -20,14 +20,10 @@ module Graphics.UI.SDL.Video.Window
        , setWindowSize
        ) where
 
-import Control.Monad
 import Data.Bits ((.&.), (.|.))
 import Data.ByteString (ByteString)
 import Data.ByteString.Unsafe (unsafeUseAsCString)
-import Foreign.ForeignPtr.Safe (newForeignPtr_,
-                                addForeignPtrFinalizer,
-                                finalizeForeignPtr,
-                                FinalizerPtr)
+import Foreign.ForeignPtr
 import Foreign.Ptr (Ptr)
 import Foreign.C.Types (CChar(..), CInt(..), CUInt(..))
 import Foreign.C.String (CString)
@@ -55,7 +51,7 @@ import Graphics.UI.SDL.Types
 
 -- c2hs does not support FunPtr's yet...
 foreign import ccall unsafe "SDL2/SDL_video.h &SDL_DestroyWindow"
-  pDestroyWindow :: FinalizerPtr CWindow
+  pDestroyWindow :: FinalizerPtr ()
 
 {#enum define SDLWindowPos { SDL_WINDOWPOS_CENTERED as Centered'
                            , SDL_WINDOWPOS_UNDEFINED as Undefined'
@@ -85,10 +81,10 @@ createWindow :: MonadSDLVideo m => ByteString -> Point PositionHint -> Size -> [
 createWindow name (P x y) (P w h) fs = do
   cw <- liftIO $ mask_ $ do
     let f = foldr ((.|.) . fromEnum') 0 fs
-    cw@(CWindow wh) <- unsafeUseAsCString name $ \cn ->
-      sdlObject "SDL_CreateWindow" (\case CWindow a -> a) $ sDLCreateWindow cn x y w h f
+    wh <- unsafeUseAsCString name $ \cn ->
+      sdlObject "SDL_CreateWindow" id $ sDLCreateWindow cn x y w h f
     addForeignPtrFinalizer pDestroyWindow wh
-    return cw
+    return wh
   let win = (if SdlWindowOpengl `elem` fs then toSomeWindow . GLWindow else toSomeWindow . Window) cw
   wid <- getWindowID win
   liftIO $ do
@@ -104,7 +100,7 @@ createWindow name (P x y) (P w h) fs = do
 
 -- | Destroy and free a window.
 freeWindow :: (MonadSDLVideo m, SDLWindow a) => a -> m ()
-freeWindow (toCWindow -> CWindow a) = liftIO $ finalizeForeignPtr a
+freeWindow (toCWindow -> a) = liftIO $ finalizeForeignPtr a
 
 -- | Get window flags from a given window.
 windowFlags :: (MonadSDLVideo m, SDLWindow a) => a -> m [WindowFlags]
