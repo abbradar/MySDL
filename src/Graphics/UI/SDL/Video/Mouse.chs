@@ -67,7 +67,7 @@ setMouseGrab (toSDLBool -> s) (toCWindow -> w) = liftIO $ sDLSetWindowGrab w s
          { `CWindow', `SDLBool' } -> `()' #}
 
 showCursor' :: MonadSDLVideo m => Int -> m Int
-showCursor' i = liftIO $ sdlCall "SDL_ShowCursor" (sDLShowCursor i) (/= 1)
+showCursor' i = liftIO $ sdlCall "SDL_ShowCursor" (sDLShowCursor i) (/= -1)
   where {#fun unsafe SDL_ShowCursor as ^
          { `Int' } -> `Int' #}
 
