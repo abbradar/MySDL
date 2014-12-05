@@ -50,7 +50,8 @@ instance HasSDLState a => HasSDLState (Timed t a) where
 --   consistent and up to date, given that all events that were received by
 --   SDL were fed into it.
 nextState :: forall m. MonadSDLVideo m => State -> [EventData] -> m State
-nextState (stateData -> s0) es = State <$> Last <$> Just <$> foldM (flip upd) s0 { _rawEvents = es } es
+nextState (stateData -> s0) es = State <$> Last <$> Just <$>
+                                 foldM (flip upd) s0 { _rawEvents = reverse es } es
   where upd :: EventData -> StateData -> m StateData
         upd (Window i Shown) = \s -> (\r -> s & windowState.at i ?~ r) <$> def
           where def :: m WindowState
