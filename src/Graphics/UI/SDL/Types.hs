@@ -10,6 +10,15 @@ import Control.Applicative
 data Point a = P !a !a
              deriving (Eq, Show)
 
+-- | Convert tuple to 'Point'.
+fromTuple2 :: (a, a) -> Point a
+fromTuple2 = uncurry P
+
+-- | Get tuple from 'Point'.
+
+toTuple2 :: Point a -> (a, a)
+toTuple2 (P a b) = (a, b)
+
 instance Functor Point where
   fmap f (P a b) = P (f a) (f b)
 
