@@ -38,14 +38,13 @@ library
                        Graphics.UI.SDL.Timer.Monad
                        Graphics.UI.SDL.Timer.Ticks
                        Graphics.UI.SDL.Version
+                       Graphics.UI.SDL.State
+                       Graphics.UI.SDL.State.Lens
+                       Graphics.UI.SDL.State.Types
+                       Graphics.UI.SDL.State.Advance
                        Graphics.UI.SDL.Utils.Framerate
-                       
-                       FRP.Netwire.SDL
-                       FRP.Netwire.SDL.State
-                       FRP.Netwire.SDL.Types
-                       FRP.Netwire.SDL.Wires
-                       FRP.Netwire.SDL.Lens
-                       FRP.Netwire.SDL.Session
+                       Graphics.UI.SDL.Utils.Session
+
 
   other-modules:       Graphics.UI.SDL.Internal.Prim
                        Graphics.UI.SDL.Internal.Class
@@ -88,11 +87,10 @@ library
                      , bitset
                      , text
                      , bytestring
+                     , linear
                        -- Transformers-related
                      , transformers
                      , exceptions
-                       -- Netwire
-                     , netwire
                        -- Lens
                      , lens
   pkgconfig-depends:   sdl2

@@ -1,7 +1,7 @@
-module FRP.Netwire.SDL.Session
-       ( SDLWire
-       , SDLSession
+module Graphics.UI.SDL.Utils.Session
+       ( SDLSession
        , sdlStep
+       , Time
        , SDLStep
        , sdlSession
        ) where
@@ -9,34 +9,32 @@ module FRP.Netwire.SDL.Session
 import Data.Monoid (mempty)
 import Control.Applicative ((<$>))
 import Control.Arrow (first)
-import Control.Wire.Core (Wire, stepWire)
-import Control.Wire.Session
 import Data.Fixed (Milli, Fixed(..))
 
-import Graphics.UI.SDL
-import FRP.Netwire.SDL.State
+import Graphics.UI.SDL.Video.Monad
+import Graphics.UI.SDL.Timer.Ticks
+import Graphics.UI.SDL.Events.Types
+import Graphics.UI.SDL.Events.Queue
+import Graphics.UI.SDL.State.Types
+import Graphics.UI.SDL.State
 
--- | Wire with time, SDL and user state.
-type SDLWire s = Wire (Timed Milli (State, s))
-
--- | Mini-wire which runs 'SDLWire' and advances internal state.
---   It gets all current events SDL queue and assumes that it's
 --   the only consumer of SDL events.
 newtype SDLSession m = SDLSession { sdlStep :: SDLStep m }
 
-type SDLStep m = forall s e a b. s -> SDLWire s e m a b -> Either e a ->
-                 m (Either e b, SDLWire s e m a b, SDLSession m)
+type Time = Milli
+
+type SDLStep m = forall a. ((Time, StateData) -> m a) -> m (a, SDLSession m)
 
 -- | Create initial 'SDLSession'.
 sdlSession :: forall m. (MonadSDLVideo m) => m (SDLSession m)
 sdlSession =
   do
     t0 <- getTicks
-    return $ SDLSession $ loop t0 [] mempty
+    return $ SDLSession $ loop t0 [] emptyState
 
   where
-    loop :: Ticks -> [EventData] -> State -> SDLStep m
-    loop oldTime nextEvents state s w' a = do
+    loop :: Ticks -> [EventData] -> StateData -> SDLStep m
+    loop oldTime nextEvents state run = do
       pumpEvents
       tf <- getTicks
 
@@ -51,6 +49,6 @@ sdlSession =
 
       ss <- nextState state es
 
-      (b, w) <- stepWire w' (Timed (MkFixed dt) (ss, s)) a
+      r <- run (MkFixed dt, ss)
 
-      return $ (b, w, SDLSession $ loop tf nes ss)
+      return $ (r, SDLSession $ loop tf nes ss)

@@ -1,57 +1,32 @@
 {-|
-Description: High-level SDL state.
-
-Provides SDL state which can be advanced given recent queue of events.
+Description: Advancement of SDL state.
 -}
-module FRP.Netwire.SDL.State
-       ( HasSDLState(..)
-       , State
-       , nextState
+module Graphics.UI.SDL.State.Advance
+       ( nextState
        ) where
 
 import Control.Monad (liftM, foldM)
 import Control.Applicative ((<$>))
-import Data.Monoid (Monoid, Last(..))
 import qualified Data.Set as S
 import qualified Data.BitSet.Word as BW
 import qualified Data.Map.Strict as M
 import Control.Lens
 import Data.Maybe (fromJust)
-import Control.Wire.Session (Timed(..))
 
-import Graphics.UI.SDL
+import Graphics.UI.SDL.Video.Monad
+import Graphics.UI.SDL.State.Types
+import Graphics.UI.SDL.Events.Types
+import Graphics.UI.SDL.Video.Window
+import Graphics.UI.SDL.Video.Mouse
+import Graphics.UI.SDL.Video.Keyboard.Types
 import Control.Lens.Instances ()
-import FRP.Netwire.SDL.Types
-
--- | Instance to help construct user state for Netwire which
---   includes SDL state and then use provided wires with it.
-class HasSDLState a where
-  stateData :: a -> StateData
-
--- | Wrapper over StateData to provide 'mempty'.
-newtype State = State (Last StateData)
-              deriving (Show, Monoid)
-
-instance HasSDLState State where
-  stateData (State (Last (Just x))) = x
-  stateData (State (Last Nothing)) = s
-    where s = StateData { _rawEvents = []
-                        , _windowState = M.empty
-                        }
-
-instance HasSDLState a => HasSDLState (a, b) where
-  stateData = stateData . fst
-
-instance HasSDLState a => HasSDLState (Timed t a) where
-  stateData (Timed _ a) = stateData a
 
 -- | Advance an SDL state.
 --   During advancement it would query all necessary data to keep the state
 --   consistent and up to date, given that all events that were received by
 --   SDL were fed into it.
-nextState :: forall m. MonadSDLVideo m => State -> [EventData] -> m State
-nextState (stateData -> s0) es = State <$> Last <$> Just <$>
-                                 foldM (flip upd) s0 { _rawEvents = reverse es } es
+nextState :: forall m. MonadSDLVideo m => StateData -> [EventData] -> m StateData
+nextState s0 es = foldM (flip upd) s0 { _rawEvents = reverse es } es
   where upd :: EventData -> StateData -> m StateData
         upd (Window i Shown) = \s -> (\r -> s & windowState.at i ?~ r) <$> def
           where def :: m WindowState

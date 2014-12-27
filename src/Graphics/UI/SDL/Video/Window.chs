@@ -77,8 +77,8 @@ windows :: MVar (Map WindowID (Weak SomeWindow))
 windows = unsafePerformIO $ newMVar Map.empty
 
 -- | Create a window.
-createWindow :: MonadSDLVideo m => ByteString -> Point PositionHint -> Size -> [WindowFlags] -> m SomeWindow
-createWindow name (P x y) (P w h) fs = do
+createWindow :: MonadSDLVideo m => ByteString -> V2 PositionHint -> Size -> [WindowFlags] -> m SomeWindow
+createWindow name (V2 x y) (V2 w h) fs = do
   cw <- liftIO $ mask_ $ do
     let f = foldr ((.|.) . fromEnum') 0 fs
     wh <- unsafeUseAsCString name $ \cn ->
@@ -125,7 +125,7 @@ getWindowFromID i = liftIO $ readMVar windows >>= maybe (return Nothing) deRefWe
 getWindowPosition :: (MonadSDLVideo m, SDLWindow a) => a -> m PosPoint
 getWindowPosition (toCWindow -> w) = liftIO $ do
   (CInt x, CInt y) <- sDLGetWindowPosition w
-  return $ P x y
+  return $ V2 x y
 
   where {#fun unsafe SDL_GetWindowPosition as ^
          { `CWindow'
@@ -137,7 +137,7 @@ getWindowPosition (toCWindow -> w) = liftIO $ do
 getWindowSize :: (MonadSDLVideo m, SDLWindow a) => a -> m Size
 getWindowSize (toCWindow -> w) = liftIO $ do
   (CInt x, CInt y) <- sDLGetWindowSize w
-  return $ P x y
+  return $ V2 x y
 
   where {#fun unsafe SDL_GetWindowSize as ^
          { `CWindow'
@@ -147,6 +147,6 @@ getWindowSize (toCWindow -> w) = liftIO $ do
 
 -- | Set a window size.
 setWindowSize :: (MonadSDLVideo m, SDLWindow a) => a -> Size -> m ()
-setWindowSize (toCWindow -> win) (P w h) = liftIO $ sDLSetWindowSize win w h
+setWindowSize (toCWindow -> win) (V2 w h) = liftIO $ sDLSetWindowSize win w h
   where {#fun SDL_SetWindowSize as ^
          { `CWindow', `Int32', `Int32' } -> `()' #}

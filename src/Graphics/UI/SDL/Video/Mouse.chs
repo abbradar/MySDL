@@ -36,7 +36,7 @@ import Graphics.UI.SDL.Video.Internal.Mouse
 getMouseState' :: MonadSDLVideo m => IO (Word32, CInt, CInt) -> m (PosPoint, MouseButtonState)
 getMouseState' call = liftIO $ do
   (f, (CInt x), (CInt y)) <- call
-  return (P x y, mmaskToButtons f)
+  return (V2 x y, mmaskToButtons f)
 
 -- | Get mouse state (absolute for the screen space).
 getMouseState :: MonadSDLVideo m => m (PosPoint, MouseButtonState)

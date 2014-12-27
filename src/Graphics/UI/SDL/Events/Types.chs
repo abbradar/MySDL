@@ -31,14 +31,15 @@ import Graphics.UI.SDL.Types
 -- We keep all IDs in their C types without conversion.
 -- | Index of joystick/gamepad's 'thingy' (button/axis/wheel).
 type JoyIndex = CUChar
--- | Touch device ID
+-- | Touch device ID.
 type TouchID = CInt
 -- TODO: is there any difference at all? I can't understand and I haven't tried
 -- actually using joysticks API.
 type JoyInstance = CInt
 type JoyID = CUInt
 
-type TouchPoint = Point Float
+-- | Normalized touch point.
+type TouchPoint = V2 Float
 
 -- | Key state.
 {#enum define KeyState { SDL_RELEASED as Released
@@ -47,11 +48,11 @@ type TouchPoint = Point Float
 
 -- | Keyboard event data.
 --
--- [@_kstate@] Key state.
--- [@_krepeat@] Is this a repeated keypress event?
--- [@_keySym@] What key emitted an event.
-data KeyboardEvent = KeyboardEvent { _kstate :: !KeyState -- ORF
+data KeyboardEvent = KeyboardEvent { -- | Key state.
+                                     _kstate :: !KeyState -- ORF
+                                     -- | Is this a repeated keypress event?
                                    , _krepeat :: !Bool
+                                     -- | What key emitted an event.
                                    , _keySym :: !KeySym
                                    }
                    deriving (Eq, Show)
@@ -77,11 +78,11 @@ makePrisms ''TextEvent
 
 -- | Mouse motion event data.
 --
--- [@mstates@] Pressed buttons.
--- [@mrel@] Mouse motion relative to previous event.
--- [@mmpos@] Mouse position relative to window.
-data MouseMotionEvent = MouseMotionEvent { _mstates :: MouseButtonState -- ORF, this is needed rarely and computed slowly
+data MouseMotionEvent = MouseMotionEvent { -- | Pressed buttons.
+                                           _mstates :: MouseButtonState -- ORF, this is needed rarely and computed slowly
+                                           -- | Mouse motion relative to previous event.
                                          , _mrel :: !PosPoint -- ORF
+                                           -- | Mouse position relative to window.
                                          , _mmpos :: !PosPoint -- ORF
                                          }
                       deriving (Eq, Show)
@@ -89,14 +90,13 @@ data MouseMotionEvent = MouseMotionEvent { _mstates :: MouseButtonState -- ORF, 
 makeLenses ''MouseMotionEvent
 
 -- | Mouse button event data.
---
--- [@mbutton@] Mouse button which triggered this event.
--- [@mstate@] Button state.
--- [@clicks@] Number of successive fast clicks.
--- [@mbpos@] Mouse position relative to window.
-data MouseButtonEvent = MouseButtonEvent { _mbutton :: !MouseButton -- ORF
+data MouseButtonEvent = MouseButtonEvent { -- | Mouse button which triggered this event.
+                                           _mbutton :: !MouseButton -- ORF
+                                           -- | Button state.
                                          , _mstate :: !KeyState -- ORF
+                                           -- | Number of successive fast clicks.
                                          , _clicks :: !Word8
+                                           -- | Mouse position relative to window.
                                          , _mbpos :: !PosPoint -- ORF
                                          }
                       deriving (Eq, Show)
@@ -104,11 +104,9 @@ data MouseButtonEvent = MouseButtonEvent { _mbutton :: !MouseButton -- ORF
 makeLenses ''MouseButtonEvent
 
 -- | Mouse event data.
---
--- [@MWheel@] Movement of the 2D wheel relative to previous event.
 data MouseEvent = MMotion !MouseMotionEvent
                 | MButton !MouseButtonEvent
-                | MWheel !PosPoint
+                | MWheel !PosPoint -- | Movement of the 2D wheel relative to previous event.
                 deriving (Eq, Show)
 
 makePrisms ''MouseEvent
@@ -140,11 +138,9 @@ data WindowEvent = Shown
 makePrisms ''WindowEvent
 
 -- | Joystick events data.
---
--- [@Hat@] Position of a hat, with up-right position being (1, 1)
 data JoystickEvent = Axis !JoyIndex !Position
                    | Ball !JoyIndex !PosPoint
-                   | Hat !JoyIndex !PosPoint
+                   | Hat !JoyIndex !PosPoint -- | Position of a hat, with up-right position being (1, 1).
                    | Button !JoyIndex !KeyState
                    | Removed
                    | ControllerAxis !JoyIndex !Position
@@ -165,43 +161,42 @@ data WMEvent = Windows
 makePrisms ''WMEvent
 
 -- | Finger touch event data.
---
--- [@finger@] ID of a finger (counted from first which began touching)
--- [@fstate@] Finger state (pressing or removed)
--- [@moving@] Is finger moving?
--- [@tfpos@] Normalized by window size position of a finger.
--- [@trel@] Position of a finger relative to previous position.
-data TouchFingerEvent = TouchFingerEvent { finger :: !CInt
+data TouchFingerEvent = TouchFingerEvent { -- | ID of a finger (counted from first which began touching).
+                                           finger :: !CInt
+                                           -- | Finger state (pressing or removed).
                                          , fstate :: !KeyState
+                                           -- | Is finger moving?
                                          , moving :: !Bool
+                                           -- | Absolute position of a finger.
                                          , tfpos :: !TouchPoint -- ORF
+                                           -- | Position of a finger relative to previous position.
                                          , trel :: !TouchPoint -- ORF
+                                           -- | Normalized pressure.
                                          , pressure :: !Float
                                          }
                       deriving (Eq, Show)
 
 -- | Simple touch gesture event data.
---
--- [@theta@] Angle by which fingers rotated.
--- [@dist@] Distance of a pinch.
--- [@tgpos@] Normalized center of a gesture.
--- [@gfingers@] Number of fingers.
-data TouchGestureEvent = TouchGestureEvent { theta :: !Float
+data TouchGestureEvent = TouchGestureEvent { -- | Angle by which fingers rotated.
+                                             theta :: !Float
+                                             -- | Distance of a pinch.
                                            , dist :: !Float
+                                             -- | Normalized center of a gesture.
                                            , tgpos :: !TouchPoint -- ORF
+                                             -- | Number of fingers.
                                            , gfingers :: !Int -- ORF
                                            }
                        deriving (Eq, Show)
 
 -- | Custom gesture event data.
 --
--- [@gesture@] ID of a gesture.
--- [@dfingers@] Number of fingers.
--- [@gerror@] Error relative to absolute match.
--- [@tdpos@] Normalized center of a gesture.
-data TouchDollarEvent = TouchDollarEvent { gesture :: !CInt
+data TouchDollarEvent = TouchDollarEvent { -- | ID of a gesture.
+                                           gesture :: !CInt
+                                           -- | Number of fingers.
                                          , dfingers :: !Int -- ORF
+                                           -- | Error relative to absolute match.
                                          , gerror :: !Float
+                                           -- | Normalized center of a gesture.
                                          , tdpos :: !TouchPoint -- ORF
                                          }
                       deriving (Eq, Show)
@@ -219,15 +214,13 @@ data JoystickType = IsJoystick | IsGameController
                   deriving (Eq, Show)
 
 -- | SDL incoming event data.
---
--- [@Drop@] Drag-and-dropped text or a file.
 data EventData = Window !WindowID !WindowEvent
                | Joystick !JoyInstance !JoystickEvent
                | JoystickAdded !JoyID !JoystickType
                | Quit
                | SysWM !WMEvent
                | Touch !TouchID !TouchEvent
-               | Drop !Text
+               | Drop !Text -- | Drag-and-dropped text or a file.
                deriving (Eq, Show)
 
 makePrisms ''EventData

@@ -16,9 +16,9 @@ import Graphics.UI.SDL.Timer
 import Graphics.UI.SDL.Monad
 
 -- | Mini-wire which delays thread to limit frames per second.
---
--- [@fpsLimit@] Given frame time (inverted FPS), delay a thread and advance internal state.
-newtype FPSLimit m = FPSLimit { fpsLimit :: (Int32 -> m (Int32, FPSLimit m)) }
+newtype FPSLimit m = FPSLimit { -- | Given frame time (inverted FPS), delay a thread and advance internal state.
+                                fpsLimit :: (Int32 -> m (Int32, FPSLimit m))
+                              }
 
 -- | Create initial 'FPSLimit'.
 fpsSession :: MonadSDL m => m (FPSLimit m)

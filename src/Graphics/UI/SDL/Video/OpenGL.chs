@@ -199,7 +199,7 @@ glSwap (GLWindow w) = liftIO $ sDLGLSwapWindow w
 glGetDrawableSize :: MonadSDLVideo m => GLWindow -> m Size
 glGetDrawableSize (GLWindow w) = liftIO $ do
   (CInt x, CInt y) <- sDLGLGetDrawableSize w
-  return $ P x y
+  return $ V2 x y
   
   where {#fun unsafe SDL_GL_GetDrawableSize as ^
          { `CWindow'

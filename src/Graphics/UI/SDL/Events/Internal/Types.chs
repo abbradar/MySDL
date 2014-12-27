@@ -37,11 +37,11 @@ import Graphics.UI.SDL.Video.Internal.Window (WindowID(..))
 esum :: CEventType -> CEvent -> [CEventType -> CEvent -> MaybeT IO a] -> IO (Maybe a)
 esum t e = runMaybeT . msum . map (\f -> f t e)
 
-getVec :: (b -> c) -> (a -> IO b) -> (a -> IO b) -> a -> IO (Point c)
+getVec :: (b -> c) -> (a -> IO b) -> (a -> IO b) -> a -> IO (V2 c)
 getVec f f1 f2 e = do
   x <- f <$> f1 e
   y <- f <$> f2 e
-  return $ P x y
+  return $ V2 x y
 
 fromCInt :: CInt -> Int32
 fromCInt (CInt a) = a
@@ -168,7 +168,7 @@ cjoyToEvent t e = Just <$> do
     SdlJoyhatmotion -> do
       hat <- {#get SDL_JoyHatEvent->hat #} e
       v' <- {#get SDL_JoyHatEvent->value #} e
-      let value = uncurry P $ case toEnum' v' of
+      let value = uncurry V2 $ case toEnum' v' of
             CCentered -> (0, 0)
             CUp -> (1, 0)
             CRight -> (0, 1)
