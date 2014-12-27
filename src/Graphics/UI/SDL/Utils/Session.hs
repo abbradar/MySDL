@@ -23,7 +23,7 @@ newtype SDLSession m = SDLSession { sdlStep :: SDLStep m }
 
 type Time = Milli
 
-type SDLStep m = forall a. ((Time, StateData) -> m a) -> m (a, SDLSession m)
+type SDLStep m = m ((Time, StateData), SDLSession m)
 
 -- | Create initial 'SDLSession'.
 sdlSession :: forall m. (MonadSDLVideo m) => m (SDLSession m)
@@ -34,7 +34,7 @@ sdlSession =
 
   where
     loop :: Ticks -> [EventData] -> StateData -> SDLStep m
-    loop oldTime nextEvents state run = do
+    loop oldTime nextEvents state = do
       pumpEvents
       tf <- getTicks
 
@@ -49,6 +49,4 @@ sdlSession =
 
       ss <- nextState state es
 
-      r <- run (MkFixed dt, ss)
-
-      return $ (r, SDLSession $ loop tf nes ss)
+      return $ ((MkFixed dt, ss), SDLSession $ loop tf nes ss)
