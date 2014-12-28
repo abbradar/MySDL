@@ -10,12 +10,11 @@ module Graphics.UI.SDL.Events.Queue
 
 import Foreign.C.Types (CInt(..))
 import Foreign.Marshal.Alloc (allocaBytesAligned)
-import Control.Monad.IO.Class
+import Control.Monad.IO.ExClass
 import Control.Concurrent (threadDelay)
 import Control.Monad.Catch
 
 import Graphics.UI.SDL.Internal.Prim
-import Graphics.UI.SDL.Events.Monad
 import Graphics.UI.SDL.Events.Types
 
 {#import Graphics.UI.SDL.Events.Internal.Types #}
@@ -23,7 +22,7 @@ import Graphics.UI.SDL.Events.Types
 #include <SDL2/SDL_events.h>
 
 -- | Receive next event from internal SDL queue if there is any.
-pollEvent :: MonadSDLEvents m => m (Maybe SDLEvent)
+pollEvent :: MonadIO' m => m (Maybe SDLEvent)
 pollEvent = liftIO $ allocaBytesAligned {#sizeof SDL_Event #} {#alignof SDL_Event #} $
             -- SDL_PollEvent calls SDL_PumpEvents, which can call into Haskell via
             -- registered watches and filters, so this call should be "safe".
@@ -34,7 +33,7 @@ pollEvent = liftIO $ allocaBytesAligned {#sizeof SDL_Event #} {#alignof SDL_Even
                     _ -> undefined
 
 -- | Wait for next SDL event to arrive.
-waitEvent :: MonadSDLEvents m => m SDLEvent
+waitEvent :: MonadIO' m => m SDLEvent
 -- It is implemented that way internally in SDL, and we re-implement
 -- it here instead to avoid sleeping in foreign call.
 waitEvent = pollEvent >>= \case
@@ -42,5 +41,5 @@ waitEvent = pollEvent >>= \case
   Nothing -> liftIO (threadDelay 10000) >> waitEvent
 
 -- | Pump events from various sources into SDL's internal queue.
-pumpEvents :: MonadSDLEvents m => m ()
+pumpEvents :: MonadIO' m => m ()
 pumpEvents = liftIO $ {#call SDL_PumpEvents as ^ #}

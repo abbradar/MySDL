@@ -5,14 +5,12 @@ module Graphics.UI.SDL.Utils.Session
        , sdlStep
        ) where
 
-import Data.Monoid (mempty)
 import Control.Applicative ((<$>))
 import Control.Arrow (first)
-import Control.Monad.IO.Class
+import Control.Monad.IO.ExClass
 import Data.Fixed (Milli, Fixed(..))
 import Data.IORef
 
-import Graphics.UI.SDL.Video.Monad
 import Graphics.UI.SDL.Timer.Ticks
 import Graphics.UI.SDL.Events.Types
 import Graphics.UI.SDL.Events.Queue
@@ -27,13 +25,13 @@ newtype SDLSession = SDLSession (IORef (Ticks, [EventData], StateData))
 type Time = Milli
 
 -- | Create initial 'SDLSession'.
-newSDLSession :: MonadSDLVideo m => m SDLSession
+newSDLSession :: MonadIO' m => m SDLSession
 newSDLSession = do
   t0 <- getTicks
   liftIO $ SDLSession <$> newIORef (t0, [], emptyState)
 
 -- | Fetch new events, advance time and update the state.
-sdlStep :: MonadSDLVideo m => SDLSession -> m (Time, StateData)
+sdlStep :: MonadIO' m => SDLSession -> m (Time, StateData)
 sdlStep (SDLSession st) = do
   (oldTime, nextEvents, state) <- liftIO $ readIORef st
   pumpEvents

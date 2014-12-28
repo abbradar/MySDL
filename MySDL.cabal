@@ -16,10 +16,10 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     Graphics.UI.SDL
+                       Graphics.UI.SDL.Init
+                       Graphics.UI.SDL.Exception
                        Graphics.UI.SDL.Types
-                       Graphics.UI.SDL.Monad
                        Graphics.UI.SDL.Video
-                       Graphics.UI.SDL.Video.Monad
                        Graphics.UI.SDL.Video.Window
                        Graphics.UI.SDL.Video.OpenGL
                        Graphics.UI.SDL.Video.ScreenSaver
@@ -29,13 +29,10 @@ library
                        Graphics.UI.SDL.Video.Surface
                        Graphics.UI.SDL.Video.Keyboard.Types
                        Graphics.UI.SDL.Audio
-                       Graphics.UI.SDL.Audio.Monad
                        Graphics.UI.SDL.Events
-                       Graphics.UI.SDL.Events.Monad
                        Graphics.UI.SDL.Events.Types
                        Graphics.UI.SDL.Events.Queue
                        Graphics.UI.SDL.Timer
-                       Graphics.UI.SDL.Timer.Monad
                        Graphics.UI.SDL.Timer.Ticks
                        Graphics.UI.SDL.Version
                        Graphics.UI.SDL.State
@@ -47,7 +44,6 @@ library
 
 
   other-modules:       Graphics.UI.SDL.Internal.Prim
-                       Graphics.UI.SDL.Internal.Class
                        Graphics.UI.SDL.Video.Internal.Window
                        Graphics.UI.SDL.Video.Internal.Keyboard
                        Graphics.UI.SDL.Video.Internal.Mouse
@@ -60,6 +56,7 @@ library
 
                        Control.Lens.Instances
                        Control.Lens.Extra
+                       Control.Monad.IO.ExClass
 
   default-extensions:  LambdaCase
                      , RankNTypes

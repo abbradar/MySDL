@@ -38,11 +38,10 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Control.Concurrent.MVar (MVar, newMVar, modifyMVar_, readMVar)
 import System.Mem.Weak (Weak, mkWeak, deRefWeak)
-import Control.Monad.IO.Class
+import Control.Monad.IO.ExClass
 
 import Data.Enum.Num
 import Graphics.UI.SDL.Internal.Prim
-import Graphics.UI.SDL.Video.Monad
 import Graphics.UI.SDL.Types
 
 {#import Graphics.UI.SDL.Video.Internal.Window #}
@@ -77,7 +76,7 @@ windows :: MVar (Map WindowID (Weak SomeWindow))
 windows = unsafePerformIO $ newMVar Map.empty
 
 -- | Create a window.
-createWindow :: MonadSDLVideo m => ByteString -> V2 PositionHint -> Size -> [WindowFlags] -> m SomeWindow
+createWindow :: MonadIO' m => ByteString -> V2 PositionHint -> Size -> [WindowFlags] -> m SomeWindow
 createWindow name (V2 x y) (V2 w h) fs = do
   cw <- liftIO $ mask_ $ do
     let f = foldr ((.|.) . fromEnum') 0 fs
@@ -99,11 +98,11 @@ createWindow name (V2 x y) (V2 w h) fs = do
          , `Word32' } -> `CWindow' #}
 
 -- | Destroy and free a window.
-freeWindow :: (MonadSDLVideo m, SDLWindow a) => a -> m ()
+freeWindow :: (MonadIO' m, SDLWindow a) => a -> m ()
 freeWindow (toCWindow -> a) = liftIO $ finalizeForeignPtr a
 
 -- | Get window flags from a given window.
-windowFlags :: (MonadSDLVideo m, SDLWindow a) => a -> m [WindowFlags]
+windowFlags :: (MonadIO' m, SDLWindow a) => a -> m [WindowFlags]
 windowFlags (toCWindow -> w) = do
   n <- liftIO $ sDLGetWindowFlags w
   return $ filter (\f -> fromEnum f .&. n /= 0) [minBound..maxBound]
@@ -112,17 +111,17 @@ windowFlags (toCWindow -> w) = do
          { `CWindow' } -> `Int' #}
 
 -- | Get internal window ID from a window.
-getWindowID :: (MonadSDLVideo m, SDLWindow a) => a -> m WindowID
+getWindowID :: (MonadIO' m, SDLWindow a) => a -> m WindowID
 getWindowID (toCWindow -> w) = liftIO $ WindowID <$> sDLGetWindowID w
   where {#fun unsafe SDL_GetWindowID as ^
          { `CWindow' } -> `CUInt' id #}
 
 -- | Try to restore a window from an internal ID. A window might be already destroyed.
-getWindowFromID :: MonadSDLVideo m => WindowID -> m (Maybe SomeWindow)
+getWindowFromID :: MonadIO' m => WindowID -> m (Maybe SomeWindow)
 getWindowFromID i = liftIO $ readMVar windows >>= maybe (return Nothing) deRefWeak . Map.lookup i
 
 -- | Get a window position.
-getWindowPosition :: (MonadSDLVideo m, SDLWindow a) => a -> m PosPoint
+getWindowPosition :: (MonadIO' m, SDLWindow a) => a -> m PosPoint
 getWindowPosition (toCWindow -> w) = liftIO $ do
   (CInt x, CInt y) <- sDLGetWindowPosition w
   return $ V2 x y
@@ -134,7 +133,7 @@ getWindowPosition (toCWindow -> w) = liftIO $ do
          } -> `()' #}
 
 -- | Get a window size.
-getWindowSize :: (MonadSDLVideo m, SDLWindow a) => a -> m Size
+getWindowSize :: (MonadIO' m, SDLWindow a) => a -> m Size
 getWindowSize (toCWindow -> w) = liftIO $ do
   (CInt x, CInt y) <- sDLGetWindowSize w
   return $ V2 x y
@@ -146,7 +145,7 @@ getWindowSize (toCWindow -> w) = liftIO $ do
          } -> `()' #}
 
 -- | Set a window size.
-setWindowSize :: (MonadSDLVideo m, SDLWindow a) => a -> Size -> m ()
+setWindowSize :: (MonadIO' m, SDLWindow a) => a -> Size -> m ()
 setWindowSize (toCWindow -> win) (V2 w h) = liftIO $ sDLSetWindowSize win w h
   where {#fun SDL_SetWindowSize as ^
          { `CWindow', `Int32', `Int32' } -> `()' #}

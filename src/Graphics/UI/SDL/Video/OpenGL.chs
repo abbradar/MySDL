@@ -34,7 +34,7 @@ import Foreign.ForeignPtr.Safe (ForeignPtr,
                                 finalizeForeignPtr,
                                 touchForeignPtr)
 import Foreign.Ptr (FunPtr, Ptr)
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.IO.ExClass
 import Control.Monad.Catch (mask_)
 import Data.Int
 import Data.Bits
@@ -42,7 +42,6 @@ import Data.Bits
 import Data.Enum.Num
 import Graphics.UI.SDL.Types
 import Graphics.UI.SDL.Internal.Prim
-import Graphics.UI.SDL.Video.Monad
 import Graphics.UI.SDL.Video.Window
 
 {#import Graphics.UI.SDL.Video.Internal.Window #}
@@ -58,13 +57,13 @@ class GLAttribute a b | a -> b where
   fromCValue :: a -> CInt -> b
 
 -- | Get current value of an OpenGL attribute.
-getGLAttribute :: (GLAttribute a b, MonadSDLVideo m) => a -> m b
+getGLAttribute :: (GLAttribute a b, MonadIO' m) => a -> m b
 getGLAttribute a = liftIO $ (fromCValue a) <$> snd <$> sdlCall "SDL_GL_GetAttribute"
                    (sDLGLGetAttribute $ toCAttr a) ((== 0) . fst)
   where {#fun unsafe SDL_GL_GetAttribute as ^ { `CGLAttr', alloca- `CInt' peek*} -> `Int' #}
 
 -- | Sets new value of an OpenGL attribute. This should be done before creating a window.
-setGLAttribute :: (GLAttribute a b, MonadSDLVideo m) => a -> b -> m ()
+setGLAttribute :: (GLAttribute a b, MonadIO' m) => a -> b -> m ()
 setGLAttribute a v = liftIO $ sdlCode "SDL_GL_SetAttribute" $
                      sDLGLSetAttribute (toCAttr a) (toCValue a v)
 -- TODO: Remove "id" after issue #83 is resolved in c2hs
@@ -161,7 +160,7 @@ foreign import ccall unsafe "SDL2/SDL_video.h &SDL_GL_DeleteContext"
   pDeleteContext :: FunPtr (Ptr () -> IO ())
 
 -- | Create OpenGL context for a given accelerated 'GLWindow'.
-createGLContext :: MonadSDLVideo m => GLWindow -> m GLContext
+createGLContext :: MonadIO' m => GLWindow -> m GLContext
 createGLContext ww@(GLWindow w) = liftIO $ mask_ $ do
   p <- sdlObject "SDL_GL_CreateContext" id $ sDLGLCreateContext w
   addForeignPtrFinalizer pDeleteContext p
@@ -171,7 +170,7 @@ createGLContext ww@(GLWindow w) = liftIO $ mask_ $ do
          { `CWindow' } -> `CGLContext' #}
 
 -- | Destroy OpenGL context.
-freeGLContext :: MonadSDLVideo m => GLContext -> m ()
+freeGLContext :: MonadIO' m => GLContext -> m ()
 freeGLContext (GLContext (GLWindow wp) p) = liftIO $ do
   finalizeForeignPtr p
   -- This guarantees that window will be finalized no earlier than context.
@@ -183,7 +182,7 @@ glContextWindow :: GLContext -> GLWindow
 glContextWindow (GLContext w _) = w
 
 -- | Set a context as current (meaning, OpenGL functions will work with it).
-glSetCurrent :: MonadSDLVideo m => GLContext -> m ()
+glSetCurrent :: MonadIO' m => GLContext -> m ()
 glSetCurrent (GLContext (GLWindow w) p) =
   liftIO $ sdlCode "SDL_GL_MakeCurrent" $ sDLGLMakeCurrent w p
 
@@ -191,12 +190,12 @@ glSetCurrent (GLContext (GLWindow w) p) =
          { `CWindow', `CGLContext' } -> `Int' #}
 
 -- | Swap OpenGL buffers in a 'GLWindow'.
-glSwap :: MonadSDLVideo m => GLWindow -> m ()
+glSwap :: MonadIO' m => GLWindow -> m ()
 glSwap (GLWindow w) = liftIO $ sDLGLSwapWindow w
   where {#fun SDL_GL_SwapWindow as ^ { `CWindow' } -> `()' #}
 
 -- | Get real drawable area size for a window.
-glGetDrawableSize :: MonadSDLVideo m => GLWindow -> m Size
+glGetDrawableSize :: MonadIO' m => GLWindow -> m Size
 glGetDrawableSize (GLWindow w) = liftIO $ do
   (CInt x, CInt y) <- sDLGLGetDrawableSize w
   return $ V2 x y

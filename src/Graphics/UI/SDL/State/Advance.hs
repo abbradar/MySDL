@@ -12,8 +12,8 @@ import qualified Data.BitSet.Word as BW
 import qualified Data.Map.Strict as M
 import Control.Lens
 import Data.Maybe (fromJust)
+import Control.Monad.IO.ExClass
 
-import Graphics.UI.SDL.Video.Monad
 import Graphics.UI.SDL.State.Types
 import Graphics.UI.SDL.Events.Types
 import Graphics.UI.SDL.Video.Window
@@ -25,7 +25,7 @@ import Control.Lens.Instances ()
 --   During advancement it would query all necessary data to keep the state
 --   consistent and up to date, given that all events that were received by
 --   SDL were fed into it.
-nextState :: forall m. MonadSDLVideo m => StateData -> [EventData] -> m StateData
+nextState :: forall m. MonadIO' m => StateData -> [EventData] -> m StateData
 nextState s0 es = foldM (flip upd) s0 { _rawEvents = reverse es } es
   where upd :: EventData -> StateData -> m StateData
         upd (Window i Shown) = \s -> (\r -> s & windowState.at i ?~ r) <$> def

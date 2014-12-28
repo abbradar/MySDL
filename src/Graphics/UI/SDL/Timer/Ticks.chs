@@ -9,9 +9,8 @@ module Graphics.UI.SDL.Timer.Ticks
 
 import Control.Applicative ((<$>))
 import Foreign.C.Types (CUInt(..), CInt(..))
-import Control.Monad.IO.Class
+import Control.Monad.IO.ExClass
 
-import Graphics.UI.SDL.Monad
 
 #include <SDL2/SDL_timer.h>
 
@@ -32,5 +31,5 @@ instance Ord Ticks where
   (Ticks a) `compare` (Ticks b) = 0 `compare` (b - a)
 
 -- | Get current number of ticks.
-getTicks :: MonadSDL m => m Ticks
+getTicks :: MonadIO' m => m Ticks
 getTicks = liftIO $ fromIntegral <$> {#call unsafe SDL_GetTicks as ^ #}

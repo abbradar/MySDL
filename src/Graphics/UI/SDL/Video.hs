@@ -3,8 +3,7 @@ Description: SDL video subsystem.
 -}
 
 module Graphics.UI.SDL.Video
-       ( module Monad
-       , module Keyboard
+       ( module Keyboard
        , module KeyboardTypes
        , module OpenGL
        , module ScreenSaver
@@ -14,7 +13,6 @@ module Graphics.UI.SDL.Video
        , module Window
        ) where
 
-import Graphics.UI.SDL.Video.Monad as Monad
 import Graphics.UI.SDL.Video.Keyboard as Keyboard
 import Graphics.UI.SDL.Video.Keyboard.Types as KeyboardTypes
 import Graphics.UI.SDL.Video.OpenGL as OpenGL

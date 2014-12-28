@@ -22,10 +22,9 @@ import Foreign.Ptr (Ptr)
 import Foreign.ForeignPtr (withForeignPtr)
 import Foreign.Marshal.Utils
 import Data.Word
-import Control.Monad.IO.Class
+import Control.Monad.IO.ExClass
 
 import Graphics.UI.SDL.Types
-import Graphics.UI.SDL.Video.Monad
 import Graphics.UI.SDL.Video.Internal.Mouse
 
 {#import Graphics.UI.SDL.Video.Internal.Window #}
@@ -33,13 +32,13 @@ import Graphics.UI.SDL.Video.Internal.Mouse
 
 #include <SDL2/SDL_mouse.h>
 
-getMouseState' :: MonadSDLVideo m => IO (Word32, CInt, CInt) -> m (PosPoint, MouseButtonState)
+getMouseState' :: MonadIO' m => IO (Word32, CInt, CInt) -> m (PosPoint, MouseButtonState)
 getMouseState' call = liftIO $ do
   (f, (CInt x), (CInt y)) <- call
   return (V2 x y, mmaskToButtons f)
 
 -- | Get mouse state (absolute for the screen space).
-getMouseState :: MonadSDLVideo m => m (PosPoint, MouseButtonState)
+getMouseState :: MonadIO' m => m (PosPoint, MouseButtonState)
 getMouseState = getMouseState' sDLGetMouseState
   where {#fun unsafe SDL_GetMouseState as ^
          { alloca- `CInt' peek*
@@ -47,7 +46,7 @@ getMouseState = getMouseState' sDLGetMouseState
          } -> `Word32' #}
 
 -- | Get relative mouse state regarding to the last call.
-getRelativeMouseState :: MonadSDLVideo m => m (PosPoint, MouseButtonState)
+getRelativeMouseState :: MonadIO' m => m (PosPoint, MouseButtonState)
 getRelativeMouseState = getMouseState' sDLGetRelativeMouseState
   where {#fun unsafe SDL_GetRelativeMouseState as ^
          { alloca- `CInt' peek*
@@ -55,26 +54,26 @@ getRelativeMouseState = getMouseState' sDLGetRelativeMouseState
          } -> `Word32' #}
 
 -- | Check if mouse cursor is grabbed by a window.
-getMouseGrab :: (MonadSDLVideo m, SDLWindow w) => w -> m Bool
+getMouseGrab :: (MonadIO' m, SDLWindow w) => w -> m Bool
 getMouseGrab (toCWindow -> w) = liftIO $ fromSDLBool <$> sDLGetWindowGrab w
   where {#fun unsafe SDL_GetWindowGrab as ^
          { `CWindow' } -> `SDLBool' #}
 
 -- | Grab or ungrab mouse cursor.
-setMouseGrab :: (MonadSDLVideo m, SDLWindow w) => Bool -> w -> m ()
+setMouseGrab :: (MonadIO' m, SDLWindow w) => Bool -> w -> m ()
 setMouseGrab (toSDLBool -> s) (toCWindow -> w) = liftIO $ sDLSetWindowGrab w s
   where {#fun unsafe SDL_SetWindowGrab as ^
          { `CWindow', `SDLBool' } -> `()' #}
 
-showCursor' :: MonadSDLVideo m => Int -> m Int
+showCursor' :: MonadIO' m => Int -> m Int
 showCursor' i = liftIO $ sdlCall "SDL_ShowCursor" (sDLShowCursor i) (/= -1)
   where {#fun unsafe SDL_ShowCursor as ^
          { `Int' } -> `Int' #}
 
 -- | Check if mouse cursor is hidden (globally).
-getCursorShown :: MonadSDLVideo m => m Bool
+getCursorShown :: MonadIO' m => m Bool
 getCursorShown = toBool <$> showCursor' (-1)
 
 -- | Hide or show a cursor.
-setCursorShown :: MonadSDLVideo m => Bool -> m ()
+setCursorShown :: MonadIO' m => Bool -> m ()
 setCursorShown = void . showCursor' . fromBool
