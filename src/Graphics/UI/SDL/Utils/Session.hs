@@ -1,15 +1,16 @@
 module Graphics.UI.SDL.Utils.Session
        ( SDLSession
-       , sdlStep
        , Time
-       , SDLStep
-       , sdlSession
+       , newSDLSession
+       , sdlStep
        ) where
 
 import Data.Monoid (mempty)
 import Control.Applicative ((<$>))
 import Control.Arrow (first)
+import Control.Monad.IO.Class
 import Data.Fixed (Milli, Fixed(..))
+import Data.IORef
 
 import Graphics.UI.SDL.Video.Monad
 import Graphics.UI.SDL.Timer.Ticks
@@ -18,35 +19,35 @@ import Graphics.UI.SDL.Events.Queue
 import Graphics.UI.SDL.State.Types
 import Graphics.UI.SDL.State
 
---   the only consumer of SDL events.
-newtype SDLSession m = SDLSession { sdlStep :: SDLStep m }
+-- | Session which provides consistent events fetching and elapsed time.
+--   counter.
+newtype SDLSession = SDLSession (IORef (Ticks, [EventData], StateData))
 
+-- | Time type, with SDL timers' precision (milliseconds).
 type Time = Milli
 
-type SDLStep m = m ((Time, StateData), SDLSession m)
-
 -- | Create initial 'SDLSession'.
-sdlSession :: forall m. (MonadSDLVideo m) => m (SDLSession m)
-sdlSession =
-  do
-    t0 <- getTicks
-    return $ SDLSession $ loop t0 [] emptyState
+newSDLSession :: MonadSDLVideo m => m SDLSession
+newSDLSession = do
+  t0 <- getTicks
+  liftIO $ SDLSession <$> newIORef (t0, [], emptyState)
 
-  where
-    loop :: Ticks -> [EventData] -> StateData -> SDLStep m
-    loop oldTime nextEvents state = do
-      pumpEvents
-      tf <- getTicks
+-- | Fetch new events, advance time and update the state.
+sdlStep :: MonadSDLVideo m => SDLSession -> m (Time, StateData)
+sdlStep (SDLSession st) = do
+  (oldTime, nextEvents, state) <- liftIO $ readIORef st
+  pumpEvents
+  tf <- getTicks
 
-      let getEv = pollEvent >>= \case
-            Nothing -> return ([], [])
-            Just (SDLEvent t d)
-              | t > tf -> return ([], [d])
-              | otherwise -> first (d :) <$> getEv
+  let getEv = pollEvent >>= \case
+        Nothing -> return ([], [])
+        Just (SDLEvent t d)
+          | t > tf -> return ([], [d])
+          | otherwise -> first (d :) <$> getEv
     
-      (es, nes) <- first (nextEvents ++) <$> getEv
-      let !dt = fromIntegral $ tf - oldTime
+  (es, nes) <- first (nextEvents ++) <$> getEv
+  let !dt = fromIntegral $ tf - oldTime
+  ss <- nextState state es
 
-      ss <- nextState state es
-
-      return $ ((MkFixed dt, ss), SDLSession $ loop tf nes ss)
+  liftIO $ writeIORef st (tf, nes, ss)
+  return (MkFixed dt, ss)
